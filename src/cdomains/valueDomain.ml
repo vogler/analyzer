@@ -4,6 +4,7 @@ open Pretty
 (* module ID: IntDomain.S = IntDomain.Trier   *)
 module ID: IntDomain.S = IntDomain.IntDomList
 (* module ID: IntDomain.S = IntDomain.IncExcInterval *)
+module FD: FloatDomain.S = FloatDomain.FloatDomList
 module AD = AddressDomain.AddressSet (ID)
 module Addr = Lval.NormalLat (ID)
 module Offs = Lval.Offset (ID)
@@ -41,6 +42,7 @@ end
 module rec Compound: S with type t = [
     | `Top
     | `Int of ID.t
+    | `Float of FD.t
     | `Address of AD.t
     | `Struct of Structs.t
     | `Union of Unions.t
@@ -53,6 +55,7 @@ struct
   type t = [
     | `Top
     | `Int of ID.t
+    | `Float of FD.t
     | `Address of AD.t
     | `Struct of Structs.t
     | `Union of Unions.t
@@ -80,6 +83,7 @@ struct
       | (`Top, `Top) -> true
       | (`Bot, `Bot) -> true
       | (`Int x, `Int y) -> ID.equal x y
+      | (`Float x, `Float y) -> FD.equal x y
       | (`Address x, `Address y) -> AD.equal x y
       | (`Struct x, `Struct y) -> Structs.equal x y
       | (`Union x, `Union y) -> Unions.equal x y
@@ -90,6 +94,7 @@ struct
   let hash x =
     match x with
       | `Int n -> ID.hash n
+      | `Float n -> FD.hash n
       | `Address n -> AD.hash n
       | `Struct n -> Structs.hash n
       | `Union n -> Unions.hash n
@@ -101,6 +106,7 @@ struct
     let constr_to_int x = match x with
         | `Bot -> 0
         | `Int _ -> 1
+        | `Float _ -> 2 (* ME *)
         | `Address _ -> 3
         | `Struct _ -> 5
         | `Union _ -> 6
@@ -110,6 +116,7 @@ struct
         | `Top -> 100
     in match x,y with
       | `Int x, `Int y -> ID.compare x y
+      | `Float x, `Float y -> FD.compare x y
       | `Address x, `Address y -> AD.compare x y
       | `Struct x, `Struct y -> Structs.compare x y
       | `Union x, `Union y -> Unions.compare x y
@@ -121,6 +128,7 @@ struct
   let pretty_f _ () state = 
     match state with
       | `Int n ->  ID.pretty () n
+      | `Float n ->  FD.pretty () n
       | `Address n ->  AD.pretty () n
       | `Struct n ->  Structs.pretty () n
       | `Union n ->  Unions.pretty () n
@@ -133,6 +141,7 @@ struct
   let short w state = 
     match state with
       | `Int n ->  ID.short w n
+      | `Float n ->  FD.short w n
       | `Address n ->  AD.short w n
       | `Struct n ->  Structs.short w n
       | `Union n ->  Unions.short w n
@@ -145,6 +154,7 @@ struct
   let rec isSimple x = 
     match x with
       | `Int n ->  ID.isSimple n
+      | `Float n ->  FD.isSimple n
       | `Address n ->  AD.isSimple n
       | `Struct n ->  Structs.isSimple n
       | `Union n ->  Unions.isSimple n
@@ -156,6 +166,7 @@ struct
   let toXML_f _ state =
     match state with
       | `Int n -> ID.toXML n
+      | `Float n -> FD.toXML n
       | `Address n -> AD.toXML n
       | `Struct n -> Structs.toXML n
       | `Union n -> Unions.toXML n
@@ -171,6 +182,7 @@ struct
   let pretty_diff () (x,y) = 
     match (x,y) with
       | (`Int x, `Int y) -> ID.pretty_diff () (x,y)
+      | (`Float x, `Float y) -> FD.pretty_diff () (x,y)
       | (`Address x, `Address y) -> AD.pretty_diff () (x,y)
       | (`Struct x, `Struct y) -> Structs.pretty_diff () (x,y)
       | (`Union x, `Union y) -> Unions.pretty_diff () (x,y)
@@ -186,6 +198,7 @@ struct
       | (`Bot, _) -> true
       | (_, `Bot) -> false
       | (`Int x, `Int y) -> ID.leq x y
+      | (`Float x, `Float y) -> FD.leq x y
       | (`Address x, `Address y) -> AD.leq x y
       | (`Struct x, `Struct y) -> Structs.leq x y
       | (`Union x, `Union y) -> Unions.leq x y
@@ -201,6 +214,7 @@ struct
       | (`Bot, x) -> x
       | (x, `Bot) -> x
       | (`Int x, `Int y) -> `Int (ID.join x y)
+      | (`Float x, `Float y) -> `Float (FD.join x y)
       | (`Address x, `Address y) -> `Address (AD.join x y)
       | (`Struct x, `Struct y) -> `Struct (Structs.join x y)
       | (`Union x, `Union y) -> `Union (Unions.join x y) 
@@ -216,6 +230,7 @@ struct
       | (`Top, x) -> x
       | (x, `Top) -> x
       | (`Int x, `Int y) -> `Int (ID.meet x y)
+      | (`Float x, `Float y) -> `Float (FD.meet x y)
       | (`Address x, `Address y) -> `Address (AD.meet x y)
       | (`Struct x, `Struct y) -> `Struct (Structs.meet x y)
       | (`Union x, `Union y) -> `Union (Unions.meet x y)
@@ -231,6 +246,7 @@ struct
       | (`Bot, x) -> x
       | (x, `Bot) -> x
       | (`Int x, `Int y) -> `Int (ID.widen x y)
+      | (`Float x, `Float y) -> `Float (FD.widen x y)
       | (`Address x, `Address y) -> `Address (AD.widen x y)
       | (`Struct x, `Struct y) -> `Struct (Structs.widen x y)
       | (`Union x, `Union y) -> `Union (Unions.widen x y) 
@@ -242,6 +258,7 @@ struct
   let narrow x y =
     match (x,y) with 
       | (`Int x, `Int y) -> `Int (ID.narrow x y)
+      | (`Float x, `Float y) -> `Float (FD.narrow x y)
       | (`Address x, `Address y) -> `Address (AD.narrow x y)
       | (`Struct x, `Struct y) -> `Struct (Structs.narrow x y)
       | (`Union x, `Union y) -> `Union (Unions.narrow x y) 
