@@ -15,6 +15,8 @@ let phase = ref 0
 let default_conf () =
   let def_int = Build.objekt ["trier"      , Build.bool true
                              ;"interval"   , Build.bool false] in
+  let def_float = Build.objekt ["trier"      , Build.bool true
+                             ;"interval"   , Build.bool false] in
   let def_ana = Build.array [Build.array [Build.string "base"
                                          ;Build.string "escape"
                                          ;Build.string "mutex"]] in
@@ -64,6 +66,7 @@ let default_conf () =
                              ;"shape"      , Build.bool true
                              ;"var_eq"     , Build.bool true] in
   Build.objekt ["int_domain" , def_int
+               ;"float_domain", def_float
                ;"analyses"   , def_ana
                ;"sensitive"  , def_path
                ;"context"    , def_ctx

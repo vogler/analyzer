@@ -8,6 +8,7 @@ module Q = Queries
 module GU = Goblintutil
 module ID = ValueDomain.ID
 module IntSet = SetDomain.Make (IntDomain.Integers)
+module FD = ValueDomain.FD
 module AD = ValueDomain.AD
 module Addr = ValueDomain.Addr
 module Offs = ValueDomain.Offs
@@ -221,7 +222,7 @@ struct
   let evalbinop (op: binop) (a1:value) (a2:value): value = 
     (* We define a conversion function for the easy cases when we can just use
      * the integer domain operations. *)
-    let the_op =
+    let int_op =
       match op with 
         | PlusA -> ID.add
         | MinusA -> ID.sub
@@ -242,6 +243,27 @@ struct
         | LAnd -> ID.logand
         | LOr -> ID.logor
         | _ -> (fun x y -> ID.top ())
+    in let float_op =
+      match op with 
+        | PlusA -> FD.add
+        | MinusA -> FD.sub
+        | Mult -> FD.mul
+        | Div -> FD.div
+        | Mod -> FD.rem
+        | Lt -> FD.lt
+        | Gt -> FD.gt
+        | Le -> FD.le
+        | Ge -> FD.ge
+        | Eq -> FD.eq
+        | Ne -> FD.ne
+        | BAnd -> FD.bitand
+        | BOr -> FD.bitor
+        | BXor -> FD.bitxor
+        | Shiftlt -> FD.shift_left
+        | Shiftrt -> FD.shift_right
+        | LAnd -> FD.logand
+        | LOr -> FD.logor
+        | _ -> (fun x y -> FD.top ())
     (* An auxiliary function for ptr arithmetic on array values. *)
     in let addToAddr n (addr:Addr.t) =
       match Addr.to_var_offset addr with
@@ -255,7 +277,11 @@ struct
       (* The main function! *)
       match a1,a2 with
         (* For the integer values, we apply the domain operator *)
-        | `Int v1, `Int v2 -> `Int (the_op v1 v2)
+        | `Int v1, `Int v2 -> `Int (int_op v1 v2)
+	(* Floats *)
+        | `Float v1, `Float v2 -> `Float (float_op v1 v2)
+        | `Int v1, `Float v2 -> let Some v1 = ID.to_int v1 in `Float (float_op (FD.of_float (Int64.to_float v1)) v2)
+        | `Float v1, `Int v2 -> let Some v2 = ID.to_int v2 in `Float (float_op v1 (FD.of_float (Int64.to_float v2)))
         (* For address +/- value, we try to do some elementary ptr arithmetic *)
         | `Address p, `Int n  -> begin
             try match op with
@@ -296,14 +322,21 @@ struct
 
   (* Evaluating Cil's unary operators. Yes, this is easy! *)
   let evalunop op a1 =
-    let the_op =
+    let int_op =
       match op with
         | Cil.Neg  -> ID.neg
         | Cil.BNot -> ID.bitnot
         | Cil.LNot -> ID.lognot
     in
+    let float_op =
+      match op with
+        | Cil.Neg  -> FD.neg
+        | Cil.BNot -> FD.bitnot
+        | Cil.LNot -> FD.lognot
+    in
       match a1 with
-        | `Int v1 -> `Int (the_op v1)
+        | `Int v1 -> `Int (int_op v1)
+        | `Float v1 -> `Float (float_op v1)
         | `Bot -> `Bot
         | _ -> VD.top ()
 
@@ -506,6 +539,7 @@ struct
       match t with
         | t when is_mutex_type t -> `Top
         | Cil.TInt _ -> `Int (ID.top ())
+        | Cil.TFloat _ -> `Float (FD.top ())
         | Cil.TPtr _ -> `Address (AD.top ())
         | Cil.TComp ({Cil.cstruct=true} as ci,_) -> `Struct (init_comp ci)
         | Cil.TComp ({Cil.cstruct=false},_) -> `Union (ValueDomain.Unions.top ())
@@ -521,6 +555,7 @@ struct
     in
       match t with
         | Cil.TInt _ -> `Int (ID.top ())
+        | Cil.TFloat _ -> `Float (FD.top ())
         | Cil.TPtr _ -> `Address (AD.top ())
         | Cil.TComp ({Cil.cstruct=true} as ci,_) -> `Struct (top_comp ci)
         | Cil.TComp ({Cil.cstruct=false},_) -> `Union (ValueDomain.Unions.top ())
@@ -620,6 +655,7 @@ struct
       let is_some_bot x =
         match x with
           | `Int n ->  ID.is_bot n
+          | `Float n ->  FD.is_bot n
           | `Address n ->  AD.is_bot n
           | `Struct n ->  ValueDomain.Structs.is_bot n
           | `Union n ->  ValueDomain.Unions.is_bot n
@@ -781,6 +817,7 @@ struct
         | `List e -> reachable_from_value (`Address (ValueDomain.Lists.entry_rand e))
         | `Struct s -> ValueDomain.Structs.fold (fun k v acc -> AD. join (reachable_from_value v) acc) s empty
         | `Int _ -> empty
+        | `Float _ -> empty
     in
     let res = reachable_from_value (get ask gs st adr) in
       if M.tracing then M.traceu "reachability" "Reachable addresses: %a\n" AD.pretty res;

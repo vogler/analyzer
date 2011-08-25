@@ -79,6 +79,7 @@ struct
   let of_int  x = x
   let to_int  x = Some x
   let is_int  _ = true
+  let to_float x = Int64.to_float x
   
   let to_excl_list x = None
   let of_excl_list x = top ()
