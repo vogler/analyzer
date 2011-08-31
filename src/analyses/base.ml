@@ -245,17 +245,17 @@ struct
         | _ -> (fun x y -> ID.top ())
     in let float_op =
       match op with 
-        | PlusA -> FD.add
-        | MinusA -> FD.sub
-        | Mult -> FD.mul
-        | Div -> FD.div
-        | Mod -> FD.rem
-        | Lt -> FD.lt
-        | Gt -> FD.gt
-        | Le -> FD.le
-        | Ge -> FD.ge
-        | Eq -> FD.eq
-        | Ne -> FD.ne
+        | PlusA  -> print_endline "base:evalbinop:op=plus"; FD.add
+        | MinusA -> print_endline "base:evalbinop:op=minus"; FD.sub
+        | Mult   -> print_endline "base:evalbinop:op=mult"; FD.mul
+        | Div    -> print_endline "base:evalbinop:op=div"; FD.div
+        | Mod    -> print_endline "base:evalbinop:op=mod"; FD.rem
+        | Lt -> print_endline "base:evalbinop:op=lt"; FD.lt
+        | Gt -> print_endline "base:evalbinop:op=gt"; FD.gt
+        | Le -> print_endline "base:evalbinop:op=le"; FD.le
+        | Ge -> print_endline "base:evalbinop:op=ge"; FD.ge
+        | Eq -> print_endline "base:evalbinop:op=eq"; FD.eq
+        | Ne -> print_endline "base:evalbinop:op=ne"; FD.ne
         | BAnd -> FD.bitand
         | BOr -> FD.bitor
         | BXor -> FD.bitxor
@@ -263,7 +263,7 @@ struct
         | Shiftrt -> FD.shift_right
         | LAnd -> FD.logand
         | LOr -> FD.logor
-        | _ -> (fun x y -> FD.top ())
+        | _ -> print_endline "base:evalbinop:top"; (fun x y -> FD.top ())
     (* An auxiliary function for ptr arithmetic on array values. *)
     in let addToAddr n (addr:Addr.t) =
       match Addr.to_var_offset addr with
@@ -277,11 +277,15 @@ struct
       (* The main function! *)
       match a1,a2 with
         (* For the integer values, we apply the domain operator *)
-        | `Int v1, `Int v2 -> `Int (int_op v1 v2)
+        | `Int v1, `Int v2 -> print_endline "base:evalbinop:int*int"; `Int (int_op v1 v2)
 	(* Floats *)
-        | `Float v1, `Float v2 -> `Float (float_op v1 v2)
-        | `Int v1, `Float v2 -> let Some v1 = ID.to_int v1 in `Float (float_op (FD.of_float (Int64.to_float v1)) v2)
-        | `Float v1, `Int v2 -> let Some v2 = ID.to_int v2 in `Float (float_op v1 (FD.of_float (Int64.to_float v2)))
+        | `Float v1, `Float v2 -> print_endline "base:evalbinop:float*float"; `Float (float_op v1 v2)
+        | `Int v1, `Float v2 -> (match ID.to_int v1 with
+		| Some v1 -> `Float (float_op (FD.of_float (Int64.to_float v1)) v2)
+		| None -> raise Top)
+        | `Float v1, `Int v2 -> (match ID.to_int v2 with
+		| Some v2 -> `Float (float_op v1 (FD.of_float (Int64.to_float v2)))
+		| None -> raise Top)
         (* For address +/- value, we try to do some elementary ptr arithmetic *)
         | `Address p, `Int n  -> begin
             try match op with
@@ -406,6 +410,8 @@ struct
     match Cil.constFold true exp with
       (* Integer literals *)
       | Cil.Const (Cil.CInt64 (num,typ,str)) -> `Int (ID.of_int num)
+      (* Float literals *)
+      | Cil.Const (Cil.CReal (num,typ,str)) -> let _ = printf "base:eval_rv:Found Const Float: %f\n" num in `Float (FD.of_float num)
       (* String literals *)
       | Cil.Const (Cil.CStr _)
       | Cil.Const (Cil.CWStr _) -> `Address (AD.str_ptr ())
@@ -444,7 +450,7 @@ struct
                   `Int (ID.of_int Int64.zero)
              | _, s -> s
        end
-      | _ -> VD.top ()
+      | _ -> print_endline "base:eval_rv:VD.top"; VD.top ()
   (* A hackish evaluation of expressions that should immediately yield an
    * address, e.g. when calling functions. *)
   and eval_fv a (gs:glob_fun) st (exp:exp): AD.t = 
@@ -692,7 +698,7 @@ struct
   * Simple defs for the transfer functions 
   **************************************************************************)
   
-  let assign ctx (lval:lval) (rval:exp)  = 
+  let assign ctx (lval:lval) (rval:exp)  = (**print_endline "base:assign";**)
     let is_list_init () =
       match lval, rval with
       | (Var a, Field (fi,NoOffset)), AddrOf((Var b, NoOffset)) 

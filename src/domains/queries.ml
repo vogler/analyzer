@@ -2,6 +2,7 @@ include Cil
 include Pretty 
 
 module ID = IntDomain.FlatPureIntegers
+module FD = FloatDomain.FlatPureFloats
 module BD = IntDomain.Booleans
 module LS = SetDomain.ToppedSet (Lval.CilLval) (struct let topname = "All" end)
 module PS = SetDomain.ToppedSet (Exp.LockingPattern) (struct let topname = "All" end)
@@ -39,6 +40,7 @@ type t = ExpEq of exp * exp
 type result = [
     | `Top
     | `Int of ID.t
+    | `Float of FD.t
     | `Bool of BD.t
     | `LvalSet of LS.t
     | `ExprSet of ES.t
@@ -67,6 +69,7 @@ struct
       | (`Top, `Top) -> true
       | (`Bot, `Bot) -> true
       | (`Int x, `Int y) -> ID.equal x y
+      | (`Float x, `Float y) -> FD.equal x y
       | (`Bool x, `Bool y) -> BD.equal x y
       | (`LvalSet x, `LvalSet y) -> LS.equal x y
       | (`ExprSet x, `ExprSet y) -> ES.equal x y
@@ -76,6 +79,7 @@ struct
   let hash (x:t) =
     match x with
       | `Int n -> ID.hash n
+      | `Float n -> FD.hash n
       | `Bool n -> BD.hash n
       | `LvalSet n -> LS.hash n
       | `ExprSet n -> ES.hash n
@@ -86,6 +90,7 @@ struct
     let constr_to_int x = match x with
         | `Bot -> 0
         | `Int _ -> 1
+        | `Float _ -> 6 (* ME *)
         | `Bool _ -> 2
         | `LvalSet _ -> 3
         | `ExprSet _ -> 4
@@ -93,6 +98,7 @@ struct
         | `Top -> 100
     in match x,y with
       | `Int x, `Int y -> ID.compare x y
+      | `Float x, `Float y -> FD.compare x y
       | `Bool x, `Bool y -> BD.compare x y
       | `LvalSet x, `LvalSet y -> LS.compare x y
       | `ExprSet x, `ExprSet y -> ES.compare x y
@@ -102,6 +108,7 @@ struct
   let pretty_f s () state = 
     match state with
       | `Int n ->  ID.pretty () n
+      | `Float n ->  FD.pretty () n
       | `Bool n ->  BD.pretty () n
       | `LvalSet n ->  LS.pretty () n
       | `ExprSet n ->  ES.pretty () n
@@ -112,6 +119,7 @@ struct
   let rec short w state = 
     match state with
       | `Int n ->  ID.short w n
+      | `Float n ->  FD.short w n
       | `Bool n ->  BD.short w n
       | `LvalSet n ->  LS.short w n
       | `ExprSet n ->  ES.short w n
@@ -122,6 +130,7 @@ struct
   let isSimple x = 
     match x with
       | `Int n ->  ID.isSimple n
+      | `Float n ->  FD.isSimple n
       | `Bool n ->  BD.isSimple n
       | `LvalSet n ->  LS.isSimple n
       | `ExprSet n ->  ES.isSimple n
@@ -131,6 +140,7 @@ struct
   let toXML_f sf state =
     match state with
       | `Int n -> ID.toXML n
+      | `Float n -> FD.toXML n
       | `Bool n -> BD.toXML n
       | `LvalSet n -> LS.toXML n
       | `ExprSet n -> ES.toXML n
@@ -149,6 +159,7 @@ struct
       | (`Bot, _) -> true
       | (_, `Bot) -> false
       | (`Int x, `Int y) -> ID.leq x y
+      | (`Float x, `Float y) -> FD.leq x y
       | (`Bool x, `Bool y) -> BD.leq x y
       | (`LvalSet x, `LvalSet y) -> LS.leq x y
       | (`ExprSet x, `ExprSet y) -> ES.leq x y
@@ -190,6 +201,7 @@ struct
       | (`Bot, x) 
       | (x, `Bot) -> x
       | (`Int x, `Int y) -> `Int (ID.widen x y)
+      | (`Float x, `Float y) -> `Float (FD.join x y)
       | (`Bool x, `Bool y) -> `Bool (BD.widen x y)
       | (`LvalSet x, `LvalSet y) -> `LvalSet (LS.widen x y)
       | (`ExprSet x, `ExprSet y) -> `ExprSet (ES.widen x y)
@@ -200,9 +212,11 @@ struct
   let narrow x y =
     match (x,y) with 
       | (`Int x, `Int y) -> `Int (ID.narrow x y)
+      | (`Float x, `Float y) -> `Float (FD.narrow x y)
       | (`Bool x, `Bool y) -> `Bool (BD.narrow x y)
       | (`LvalSet x, `LvalSet y) -> `LvalSet (LS.narrow x y)
       | (`ExprSet x, `ExprSet y) -> `ExprSet (ES.narrow x y)
       | (`ExpTriples x, `ExpTriples y) -> `ExpTriples (PS.narrow x y)
       | (x,_) -> x
 end
+

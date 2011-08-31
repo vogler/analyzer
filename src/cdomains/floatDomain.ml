@@ -92,7 +92,7 @@ struct
   let minimal      x = None
   
   let neg  = (~-.)
-  let add  = (+.)
+  let add a b = let _ = printf "float:add: %f + %f = %f\n" a b (a+.b) in (+.) a b
   let sub  = (-.)
   let mul  = ( *. )
   let div x y = (* nan instead? *)
@@ -104,7 +104,7 @@ struct
   let gt n1 n2 = of_bool (n1 >  n2)
   let le n1 n2 = of_bool (n1 <= n2)
   let ge n1 n2 = of_bool (n1 >= n2)
-  let eq n1 n2 = of_bool (n1 =  n2)
+  let eq n1 n2 = let _ = printf "float:eq: %f = %f -> %B\n" n1 n2 (n1=n2) in of_bool (n1 =  n2)
   let ne n1 n2 = of_bool (n1 <> n2)
   let bit' f x y = Int64.float_of_bits (f (Int64.bits_of_float x) (Int64.bits_of_float y))
   let bitnot x = Int64.float_of_bits (Int64.lognot (Int64.bits_of_float x))

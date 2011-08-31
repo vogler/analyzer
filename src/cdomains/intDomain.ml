@@ -662,7 +662,7 @@ struct
       | _      -> false
 
   let neg (x,y) = (I.neg y, I.neg x)
-  let add (x1,x2) (y1,y2) = (I.addp I.NInf x1 y1, I.addp I.PInf x2 y2)
+  let add (x1,x2) (y1,y2) = let _ = printf "blubb" in (I.addp I.NInf x1 y1, I.addp I.PInf x2 y2)
   let sub i1 i2 = add i1 (neg i2)
   let mul (x1,x2) (y1,y2) =
     if is_bot (x1, x2) || is_bot (y1, y2) then
