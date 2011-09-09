@@ -363,11 +363,11 @@ struct
   (* evaluate value using our "query functions" *)
   let eval_rv_pre (ask: Q.ask) exp pr =
     let binop op e1 e2 =
-      let equality () = 
+      let equality () = print_string "base:eval_rv_pre:equality:";
         match ask (Q.ExpEq (e1,e2)) with
-          | `Int 0L -> Some false
-          | `Int _ -> Some true
-          | _ -> None
+          | `Int 0L -> print_endline "false"; Some false
+          | `Int _ -> print_endline "true"; Some true
+          | _ -> print_endline "none"; None
       in
       match op with
         | Cil.MinusA
@@ -1138,6 +1138,14 @@ struct
                 (* Warn if it was false; ignore if true! The None case
                   * should not happen! *)
                 (match ID.to_bool v with
+                  | Some false -> M.warn_each ("Assertion \"" ^ expr () ^ "\" will fail")
+                  | _ -> ()); 
+                (* Just propagate the state *)
+                [map_true st]
+            | `Float v when FD.is_bool v -> 
+                (* Warn if it was false; ignore if true! The None case
+                  * should not happen! *)
+                (match FD.to_bool v with
                   | Some false -> M.warn_each ("Assertion \"" ^ expr () ^ "\" will fail")
                   | _ -> ()); 
                 (* Just propagate the state *)

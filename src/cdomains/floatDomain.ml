@@ -417,7 +417,7 @@ struct
     | _ -> `Bot
 
   (* The equality check: *) 
-  let eq x y = match x,y with
+  let eq x y = print_string "float:Trier:eq:"; match x,y with
     (* Not much to do with two exclusion sets: *)
     | `Excluded _, `Excluded _ -> top ()
     (* Is x equal to an exclusion set, if it is a member then NO otherwise we
@@ -425,7 +425,7 @@ struct
     | `Definite x, `Excluded s -> if S.mem x s then of_bool false else top ()
     | `Excluded s, `Definite x -> if S.mem x s then of_bool false else top ()
     (* The good case: *)
-    | `Definite x, `Definite y -> of_bool (x=y)
+    | `Definite x, `Definite y -> let _ = printf "`Definite %f, `Definite %f -> %B\n" x y (x=y) in of_bool (x=y)
     (* If either one of them is bottom, we return bottom *)
     | _ -> `Bot
 
@@ -1638,10 +1638,10 @@ struct
       | Interval x, Interval y -> Interval (Interval.ne x y)
       | _ -> raise FloatDomListBroken
 
-  let eq' x y =
+  let eq' x y = print_string "float:FloatDomList:eq:eq':";
     match x, y with
-      | Trier x, Trier y -> Trier (Trier.eq x y)
-      | Interval x, Interval y -> Interval (Interval.eq x y)
+      | Trier x, Trier y -> print_endline "trier"; Trier (Trier.eq x y)
+      | Interval x, Interval y -> print_endline "interval"; Interval (Interval.eq x y)
       | _ -> raise FloatDomListBroken
 
   let ge' x y =

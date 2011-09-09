@@ -90,11 +90,11 @@ struct
     let constr_to_int x = match x with
         | `Bot -> 0
         | `Int _ -> 1
-        | `Float _ -> 6 (* ME *)
         | `Bool _ -> 2
         | `LvalSet _ -> 3
         | `ExprSet _ -> 4
         | `ExpTriples _ -> 5
+        | `Float _ -> 6 (* ME *)
         | `Top -> 100
     in match x,y with
       | `Int x, `Int y -> ID.compare x y
