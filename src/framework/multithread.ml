@@ -99,7 +99,7 @@ struct
       let funs  = 
         match Spec.query (getctx st) (Queries.EvalFunvar exp) with
           | `LvalSet ls -> Queries.LS.fold (fun ((x,_)) xs -> x::xs) ls [] 
-          | _ -> Messages.bailwith ("Failed to evaluate function expression "^(sprint 80 (d_exp () exp)))
+          | _ -> Messages.bailwith ("ProcCall: Failed to evaluate function expression "^(sprint 80 (d_exp () exp)))
       in
       let dress (f,es)  = (MyCFG.Function f, SD.lift es) in
       let start_vals : Solver.diff ref = ref [] in
@@ -288,7 +288,7 @@ struct
               let fs =  
                 match Spec.query (getctx p x') (Queries.EvalFunvar f) with
                   | `LvalSet ls -> Queries.LS.fold (fun ((x,_)) xs -> x::xs) ls [] 
-                  | _ -> Messages.bailwith ("Failed to evaluate function expression "^(sprint 80 (d_exp () f)))  
+                  | _ -> Messages.bailwith ("Is_special: Failed to evaluate function expression "^(sprint 80 (d_exp () f)))
               in
               let _  = List.map Cilfacade.getdec fs in
                 LibraryFunctions.use_special (List.hd fs).vname
@@ -301,7 +301,7 @@ struct
       let fs = 
         match Spec.query ctx (Queries.EvalFunvar f) with
           | `LvalSet ls -> Queries.LS.fold (fun ((x,_)) xs -> x::xs) ls [] 
-          | _ -> Messages.bailwith ("Failed to evaluate function expression "^(sprint 80 (d_exp () f)))  
+          | _ -> Messages.bailwith ("Special: Failed to evaluate function expression "^(sprint 80 (d_exp () f)))
       in
       let f = List.hd fs in
       let joiner d1 (d2,_,_) = Spec.Dom.join d1 d2 in 
@@ -315,7 +315,7 @@ struct
             let fs = 
               match Spec.query ctx (Queries.EvalFunvar f) with
                 | `LvalSet ls -> Queries.LS.fold (fun ((x,_)) xs -> x::xs) ls [] 
-                | _ -> Messages.bailwith ("Failed to evaluate function expression "^(sprint 80 (d_exp () f)))  
+                | _ -> Messages.bailwith ("Enter: Failed to evaluate function expression "^(sprint 80 (d_exp () f)))
             in
             List.concat (List.map (fun f -> List.map (fun (_,y) -> (f, SD.lift y)) (Spec.enter_func ctx lv f args)) fs)
         | _ -> failwith "SP: cannot enter a non-call node."
@@ -374,7 +374,7 @@ struct
     SP_SOL.iter f r;
     vm, gm
 
-  (** add extern ariables to local state *)
+  (** add extern variables to local state *)
   let do_extern_inits (file : Cil.file) : Spec.Dom.t =
     let module VS = Set.Make (Basetype.Variables) in    
     let add_glob s = function
@@ -389,8 +389,8 @@ struct
       Spec.assign ctx (var v) MyCFG.unknown_exp 
     in
     let add_externs s = function
-      | GVarDecl (v,_) when not (VS.mem v vars) -> set_bad v s
-      | _                -> s
+      | GVarDecl (v,_) when not (VS.mem v vars || isFunctionType v.vtype) -> set_bad v s
+      | _ -> s
     in    
     Cil.foldGlobals file add_externs (Spec.startstate ())
   

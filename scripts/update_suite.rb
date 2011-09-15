@@ -13,6 +13,7 @@ else
   fail "Please run script from goblint dir!" unless File.exist?(goblint)
   `make`
 end
+$rev = `git log -1 --pretty=format:'%h (%ai)'`
 
 backup = File.join(Dir.getwd,"goblint.script_backup.json")
 json   = File.join(Dir.getwd, "goblint.json")
@@ -20,6 +21,8 @@ FileUtils.mv(json, backup) if File.exists?(json)
 
 testresults = File.expand_path("tests/suite_result") 
 testfiles   = File.expand_path("tests/regression")
+
+alliswell = true
 
 class Project
   attr_reader :name, :group, :path, :params, :warnings
@@ -149,9 +152,21 @@ projects.each do |p|
   `code2html -l c -n #{filename} > #{orgfile}`
   `#{goblint} #{filename} --justcil #{p.params} >#{cilfile} 2> /dev/null`
   p.size = `wc -l #{cilfile}`.split[0]
-  `#{goblint} #{filename} #{p.params} 1>#{warnfile} --stats 2>#{statsfile}`
+  starttime = Time.now
+  cmd = "#{goblint} #{filename} #{p.params} 1>#{warnfile} --stats 2>#{statsfile}"
+  system(cmd)
+  endtime   = Time.now
+  #status = $?.exitstatus
   `#{goblint} #{filename} #{p.params} --trace con 2>#{confile}` if tracing
   `#{goblint} #{filename} #{p.params} --trace sol 2>#{solfile}` if tracing
+  File.open(statsfile, "a") do |f|
+    f.puts "\n=== APPENDED BY BENCHMARKING SCRIPT ==="
+    f.puts "Analysis began: #{starttime}"
+    f.puts "Analysis ended: #{endtime}"
+    f.puts "Duration: #{format("%.02f", endtime-starttime)} s"
+    f.puts "Git log: #{$rev}"
+    f.puts "Goblint params: #{cmd}"
+  end
 end
 FileUtils.mv(backup,json) if File.exists?(backup) 
 
@@ -262,6 +277,7 @@ File.open(File.join(testresults, "index.html"), "w") do |f|
     if correct == p.warnings.size && is_ok then
       f.puts "<td style =\"color: green\">NONE</td>"
     else
+      alliswell = false
       if ferr.nil? then
         f.puts "<td style =\"color: red\">FAILED</td>"
       else
@@ -276,3 +292,6 @@ File.open(File.join(testresults, "index.html"), "w") do |f|
   f.puts "</body>"
   f.puts "</html>"
 end
+
+if alliswell then puts "All is well!" else puts "All is not well!" end
+exit alliswell
