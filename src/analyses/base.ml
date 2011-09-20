@@ -271,12 +271,12 @@ struct
         | _ -> addr
     in
       (* The main function! *)
-      match a1,a2 with
+      match a1,a2 with (* TODO wenn nicht int*int dann Top+Warning für Ausgabe bei mod *)
         (* For the integer values, we apply the domain operator *)
         | `Int v1, `Int v2 -> print_endline "base:evalbinop:int*int"; `Int (int_op v1 v2)
 	(* Floats *)
         | `Float v1, `Float v2 -> print_endline "base:evalbinop:float*float"; `Float (float_op v1 v2)
-        | `Int v1, `Float v2 -> (match ID.to_int v1 with
+        | `Int v1, `Float v2 -> let Some v11 = ID.to_int v1 in let _ = (printf "Int %i Float %f" (Int64.to_int v11) (Int64.to_float v11)) in (match ID.to_int v1 with
 		| Some v1 -> `Float (float_op (FD.of_float (Int64.to_float v1)) v2)
 		| None -> raise Top)
         | `Float v1, `Int v2 -> (match ID.to_int v2 with

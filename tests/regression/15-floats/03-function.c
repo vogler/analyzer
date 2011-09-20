@@ -8,7 +8,7 @@ int getNumber(){
 	return NUM;
 }
 
-int getRandom(){ // TODO test params
+int getRandom(){
 	srand(time(NULL));
 	return rand();
 }
@@ -20,13 +20,11 @@ int main() {
 	float f2 = 1.0;
 	int r = getRandom();
 	if(r){
-		f2 = 3.0; // f2 immernoch 1.0, funktioniert bei branch
+		f2 = 3.0;
 	}else{
-		f2 = -3.0; // same
+		f2 = -3.0;
 	}
-	// strided intervals
-	assert(f2 >= (-3.0f));
-	assert(f2 <= 3.0f);
+	assert(f2 == -3.0 || f2 == 3.0); // UNKNOWN
 
 	float f3 = getNumber();
 	assert(f3 == NUM);

@@ -8,9 +8,6 @@ float glob2 = 9;
 int main() {
   float i,j,k;
 
-  // double == float?
-  assert(1.1 == 1.1f);
-
   // simple assignments
   i = 5;
   j = 6;
