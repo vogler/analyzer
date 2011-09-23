@@ -302,13 +302,13 @@ struct
       List.map (fun (x,y) -> y) (cfg x) 
     in
     let theta x = failwith "SP: partial invariant not supported." in
-    let add_var _ _ = failwith "SP: spawning not supported" in
+    let add_no_var _ _ = ()(*we ignore this because base defensively spawns escaped function pointers*) in
     let add_diff _ = failwith "SP: partial invariant not supported" in
     let getctx v x = 
       try
         let oldstate = List.concat (List.map (fun m -> match PH.find m v with [] -> raise A.Deadcode | x -> x) old) in
         let oldglob = List.map PHG.find old_g in
-        A.set_preglob (A.set_precomp (A.context top_query x theta [] add_var add_diff) oldstate) oldglob  
+        A.set_preglob (A.set_precomp (A.context top_query x theta [] add_no_var add_diff) oldstate) oldglob  
       with Not_found  -> Messages.warn "Analyzing a program point that was thought to be unreachable.";
                          raise A.Deadcode
     in
@@ -517,7 +517,7 @@ struct
       in
       if !GU.verbose then print_endline ("Analyzing phase "^string_of_int phase^"!");
       Stats.time "solver" solve () in
-    if !GU.verify then begin
+    if !GU.verify && (not !GU.sharir_pnueli) then begin
       if !GU.verbose then print_endline "Verifying!";
       Stats.time "verification" (Solver.verify () (system cfg old old_g old_s phase)) (sol,gs)
     end;
