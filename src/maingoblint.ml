@@ -91,6 +91,7 @@ let main () =
   in
   let setsolver str = 
     GU.solver := match str with
+      | "interactive"
       | "effectWCon"
       | "solverConSideRR"
       | "solverConSideWNRR"
@@ -155,7 +156,7 @@ let main () =
                  ("--propdel", Arg.Tuple [Arg.Set_string tmp_arg; Arg.String (set_prop false)], "<prop> <name> Disables a propery, e.g., --propdel int_domain interval.");
                  ("--type-inv", Arg.Bool ((:=) GU.use_type_invariants), "<bool>  Should we use type invariants?");
                  ("--list-type", Arg.Bool ((:=) GU.use_list_type), "<bool>  Should we use list types?");
-                 ("--solver", Arg.Symbol (["effectWCon"; "effectWNCon"; "solverConSideRR"; "solverConSideWNRR"], setsolver), " Picks the solver.");
+                 ("--solver", Arg.Symbol (["effectWCon"; "effectWNCon"; "solverConSideRR"; "solverConSideWNRR"; "interactive"], setsolver), " Picks the solver.");
                  ("--unique", add_string GU.singles, "<type name>  For types that have only one value.");
                  ("--dump", Arg.String setdump, "<path>  Dumps the results to the given path");
                  ("--cilout", Arg.String setcil, "<path>  Where to dump cil output");
@@ -166,6 +167,7 @@ let main () =
                  ("--solver-progress", Arg.Bool ((:=) GU.solver_progress), " <bool> Used for debugging. Prints out a symbol on solving a rhs.");
                  ("--sharirpnueli", Arg.Set GU.sharir_pnueli, " Solve using the Sharir-Pnueli algorithm.");
                  ("--full-context", Arg.Set GU.full_context, " Do not side-effect function entries.");
+                 ("--debug-sockets", Arg.Tuple [Arg.Set_int GU.command_port;Arg.Int GU.open_sockets], "<port> <port> Eclipse debuger plugin support.");
                  ] in
   let jsonRegex = Str.regexp ".+\\.json$" in
   let recordFile fname = 

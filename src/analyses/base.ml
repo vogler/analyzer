@@ -27,6 +27,8 @@ let is_immediate_type t = is_mutex_type t || isFunctionType t
 let is_global (a: Q.ask) (v: varinfo): bool = 
   v.vglob || match a (Q.MayEscape v) with `Bool tv -> tv | _ -> false
 
+let is_static (v:varinfo): bool = v.vstorage == Static
+
 let is_private (a: Q.ask) (v: varinfo): bool = 
   match a (Q.IsPrivate v) with `Bool tv -> tv | _ -> false
    
@@ -572,7 +574,7 @@ struct
       match (op, lval, value, tv) with
         (* The true-branch where x == value: *)
         | Cil.Eq, x, value, true -> 
-            if M.tracing then M.trace "invariant" "Yes, success! %a equals %a\n\n" Cil.d_lval x VD.pretty value;
+            if M.tracing then M.trace "invariant" "Yes, %a equals %a\n" Cil.d_lval x VD.pretty value;
             Some (x, value)
         (* The false-branch for x == value: *)
         | Cil.Eq, x, value, false -> begin
@@ -581,21 +583,20 @@ struct
                   match ID.to_int n with
                     | Some n ->
                         (* When x != n, we can return a singleton exclusion set *)
-                        if M.tracing then M.trace "invariant" "Yes, success! %a is not %Ld\n\n" Cil.d_lval x n;
+                        if M.tracing then M.trace "invariant" "Yes, %a is not %Ld\n" Cil.d_lval x n;
                         Some (x, `Int (ID.of_excl_list [n]))
                     | None -> None
                 end
-              | `Address n ->
-                  if M.tracing then M.trace "invariant" "Yes, success! %a is not NULL\n\n" Cil.d_lval x;
-                  let x_rv = 
-                    match eval_rv a gs st (Cil.Lval x) with
-                     | `Address a -> a
-                     | _ -> AD.top() in
-                  Some (x, `Address (AD.diff x_rv n))                  
+              | `Address n -> begin
+                  if M.tracing then M.trace "invariant" "Yes, %a is not %a\n" Cil.d_lval x AD.pretty n;
+                  match eval_rv a gs st (Cil.Lval x) with
+                   | `Address a when not (AD.is_top n) -> Some (x, `Address (AD.diff a n))
+                   | _ -> None
+                end
               | _ -> 
                 (* We can't say anything else, exclusion sets are finite, so not
                  * being in one means an infinite number of values *)
-                if M.tracing then M.trace "invariant" "Failed! (not a definite value)\n\n";
+                if M.tracing then M.trace "invariant" "Failed! (not a definite value)\n";
                 None
           end
         | Cil.Ne, x, value, _ -> helper Cil.Eq x value (not tv)
@@ -631,7 +632,7 @@ struct
             if M.tracing then M.trace "invariant" "Failed! (operation not supported)\n\n";
             None
     in
-      if M.tracing then M.tracel "invariant" "expression: %a is %B\n" Cil.d_exp exp tv;
+      if M.tracing then M.tracel "invariant" "assume expression %a is %B\n" Cil.d_exp exp tv;
         let null_val typ =
           match typ with
             | Cil.TPtr _ -> `Address (AD.null_ptr())
@@ -738,6 +739,7 @@ struct
     match eval_rv ctx.ask ctx.global ctx.local exp with
       (* For a boolean value: *)
       | `Int value when (ID.is_bool value) -> 
+          M.tracel "branch" "Expression %a evaluated to %a\n" d_exp exp ID.pretty value;
           (* to suppress pattern matching warnings: *)
           let fromJust x = match x with Some x -> x | None -> assert false in
           let v = fromJust (ID.to_bool value) in
@@ -1135,6 +1137,7 @@ struct
                   * should not happen! *)
                 (match ID.to_bool v with
                   | Some false -> M.warn_each ("Assertion \"" ^ expr () ^ "\" will fail")
+                  | Some true  -> M.warn_each ("Assertion \"" ^ expr () ^ "\" will succeed")
                   | _ -> ()); 
                 (* Just propagate the state *)
                 [map_true st]
@@ -1167,22 +1170,27 @@ struct
             | None -> (
                 M.warn ("Function definition missing for " ^ f.vname);
                 let st_expr (v:varinfo) (value) a = 
-                  if is_global ctx.ask v then Cil.mkAddrOf (Var v, NoOffset) :: a else a
+                  if is_global ctx.ask v && not (is_static v) then 
+                    Cil.mkAddrOf (Var v, NoOffset) :: a 
+                  else a
                 in
-                (* This here is just to see of something got spawned. *)
+                let addrs = CPA.fold st_expr cpa (lv_list @ args) in
+                let (cpa,fl as st) = invalidate ctx.ask gs st addrs in
+                (* This rest here is just to see of something got spawned. *)
                 let flist = collect_funargs ctx.ask gs st args in
-                let f addr = 
-                  let var = List.hd (AD.to_var_may addr) in
-                  let _ = Cilfacade.getdec var in true
+                let f addr acc = 
+                  try 
+                    let var = List.hd (AD.to_var_may addr) in
+                    let _ = Cilfacade.getdec var in true 
+                  with _ -> acc
                 in 
-                let g a acc = try let r = f a in r || acc with _ -> acc in
-                let (cpa,fl as st) = invalidate ctx.ask gs st (CPA.fold st_expr cpa (lv_list @ args)) in
-                  if List.fold_right g flist false then begin
-                    (* Copy-pasted from the thread-spawning code above: *)
-                    GU.multi_threaded := true;
-                    let new_fl = Flag.join fl (Flag.get_main ()) in
-                      [map_true (cpa,new_fl)]
-                  end else [map_true st]
+                if List.fold_right f flist false then begin
+                  (* Copy-pasted from the thread-spawning code above: *)
+                  GU.multi_threaded := true;
+                  let new_fl = Flag.join fl (Flag.get_main ()) in
+                  [map_true (cpa,new_fl)]
+                end else 
+                  [map_true st]
               )
         end
 
