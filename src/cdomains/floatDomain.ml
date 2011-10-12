@@ -757,13 +757,13 @@ struct
       | x when not (leq (I.Fin 0.0, I.Fin 0.0) x) -> of_bool true
       | _ -> top () 
   
-  let eq i1 i2 =
+  let eq i1 i2 = 
     match is_bot i1, is_bot i2 with
       | true, _ 
       | _   , true -> bot ()
       | _ ->
     match sub i1 i2 with
-      | (I.Fin 0.0, I.Fin 0.0) -> of_bool true
+      | (I.Fin 0.0, I.Fin 0.0) -> print_endline "true"; of_bool true
       | x when not (leq (I.Fin 0.0, I.Fin 0.0) x) -> of_bool false
       | _ -> top () 
 

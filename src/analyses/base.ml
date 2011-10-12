@@ -1156,6 +1156,7 @@ struct
                   * should not happen! *)
                 (match FD.to_bool v with
                   | Some false -> M.warn_each ("Assertion \"" ^ expr () ^ "\" will fail")
+                  | Some true  -> M.warn_each ("Assertion \"" ^ expr () ^ "\" will succeed")
                   | _ -> ()); 
                 (* Just propagate the state *)
                 [map_true st]
