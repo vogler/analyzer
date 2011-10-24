@@ -8,3 +8,4 @@ goblint
 goblint.byte
 goblint.json
 src/version.ml
+src/config.ml
