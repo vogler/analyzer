@@ -17,6 +17,8 @@ struct
 
   module GCache = Cache.OneVar (G.Var)
   module WorkSet = Set.Make (Var)
+
+  module EWC  = EffectWCon.Make(Var)(SD)(Spec.Glob)
   
   let stack_d = ref 0
   let full_trace = false
@@ -36,7 +38,7 @@ struct
   let increase (v:Var.t) = 
     let set v c = 
       if not full_trace && (c > start_c && c > !max_c && (not (is_some !max_var) || not (Var.equal (from_some !max_var) v))) then begin
-        if tracing then trace "sol" "Swiched tracing to %a\n" Var.pretty_trace v;
+        if tracing then trace "sol" "Switched tracing to %a\n" Var.pretty_trace v;
         max_c := c;
         max_var := Some v
       end
@@ -57,13 +59,36 @@ struct
   
   
   let solve (system: system) (initialvars: variable list) (start:(Var.t * VDom.t) list): solution' =
+    (* system where every rhs is bottom *)
+    let system0 = system in
+    (* G or list of systems to pick from *)
+    let systems = [system, system0] in
+    (* 1. select an initial system gk from G *)
+    let gk = List.hd systems in
+
+    (* 2. compute a fixed point xk of gk *)
+    let xk = EWC.solve gk initialvars start in
+    (* 3. compute f(xk) *)
+    let fxk = compute system initialvars start in (* TODO replace start with solution *)
+    (* 4. if f(xk) == xk then return xk *)
+    Solver.verify () gk fxk
+    (* 5. Policy improvement. Take gk+1 such that f(xk) == gk+1(xk). Goto 2 *)
+    let gks = List.map (fun sys -> compute sys initialvars start) systems in (* TODO start *)
+    
+
+
+  (* type solution'   = var_domain VMap.t * glob_domain GMap.t
+     start: variable * var_domain
+   *)
+  let compute (system: system) (initialvars: variable list) (start:(Var.t * VDom.t) list): solution' =
+    let _ = print_endline "ITERATION.compute" in
     let sigma: VDom.t VMap.t = VMap.create 113 (VDom.bot ()) in
     let theta = GMap.create 113 (GDom.bot ()) in
-    let vInfl = VMap.create 113 ([]: (constrain * int) list) in
-    let gInfl = GMap.create 113 ([]: (constrain * int) list) in
-    let todo  = VMap.create 113 ([]: (rhs * int) list) in
-    let unsafe = ref ([]: (constrain * int) list) in
-    let workset = ref (List.fold_right WorkSet.add initialvars WorkSet.empty) in
+    let vInfl = VMap.create 113 ([]: (constrain * int) list) in (* influence set for local vars (dependencies) *)
+    let gInfl = GMap.create 113 ([]: (constrain * int) list) in (* influence set for global vars *)
+    let todo  = VMap.create 113 ([]: (rhs * int) list) in (* rhs for one var *)
+    let unsafe = ref ([]: (constrain * int) list) in (* global side effects, wird verändert *)
+    let workset = ref (List.fold_right WorkSet.add initialvars WorkSet.empty) in (* workset for lhs, noch offene vars *)
     
     let rec constrainOneVar (x: variable) =
       let rhsides = 
@@ -101,7 +126,7 @@ struct
                 let compgs = GDom.join oldgstate gstate in
                   if not (GDom.leq compgs oldgstate) then begin
                     let lst = GMap.find gInfl g in
-                    GMap.replace theta g (GDom.widen oldgstate compgs);
+                    GMap.replace theta g compgs;
                     incr Goblintutil.globals_changed;
                     if !Goblintutil.verbose then begin ignore (fprintf stderr "\n********************GLOBALS CHANGED********************* (%d)\n" !Goblintutil.globals_changed); flush stderr end;
                     unsafe := lst @ !unsafe;
@@ -110,7 +135,7 @@ struct
           in
             List.iter doOneGlobalDelta ngd;
             if !GU.eclipse then show_add_work_buf (List.length tc);
-            List.iter constrainOneVar tc;
+            (*List.iter constrainOneVar tc;*)
             local_state := VDom.join !local_state nls;
             if !GU.solver_progress then decr stack_d 
         in
@@ -125,7 +150,7 @@ struct
           end;
           let new_val = VDom.join !local_state old_state in
           if not (VDom.leq new_val old_state) then begin
-            VMap.replace sigma x (VDom.widen old_state new_val);
+            VMap.replace sigma x new_val;
             let influenced_vars = ref WorkSet.empty in
             let collectInfluence ((y,f),i) = 
               VMap.replace todo y (cons_unique snd (f,i) (VMap.find todo y));             
@@ -134,7 +159,7 @@ struct
               List.iter collectInfluence (VMap.find vInfl x);
               VMap.remove vInfl x;
           if !GU.eclipse then show_add_work_buf (WorkSet.cardinal !influenced_vars);
-              WorkSet.iter constrainOneVar !influenced_vars;
+              (*WorkSet.iter constrainOneVar !influenced_vars;*)
           end 
     end end;
     if !GU.eclipse then show_worked_buf 1
@@ -142,7 +167,7 @@ struct
 
     and vEval (c: constrain * int) var =
       if !GU.eclipse then show_add_work_buf 1;
-      constrainOneVar var;
+      (*constrainOneVar var;*)
       VMap.replace vInfl var (c :: VMap.find vInfl var);
       VMap.find sigma var 
     
@@ -154,7 +179,9 @@ struct
       GU.may_narrow := false;
       if !GU.eclipse then show_subtask "Constant Propagation" 0;  
       List.iter (fun (v,d) -> VMap.add sigma v d) start ;
-      while not (WorkSet.is_empty !workset) do
+
+      WorkSet.iter constrainOneVar !workset;
+      (*while not (WorkSet.is_empty !workset) do
         if !GU.eclipse then show_add_work_buf (WorkSet.cardinal !workset);
         WorkSet.iter constrainOneVar !workset;
         workset := WorkSet.empty;
@@ -164,6 +191,6 @@ struct
         in
           List.iter recallConstraint !unsafe;
           unsafe := [];
-      done;
+      done;*)
       (sigma, theta)
 end 

@@ -243,17 +243,17 @@ struct
         | _ -> (fun x y -> ID.top ())
     in let float_op =
       match op with 
-        | PlusA  -> print_endline "base:evalbinop:op=plus"; FD.add
-        | MinusA -> print_endline "base:evalbinop:op=minus"; FD.sub
-        | Mult   -> print_endline "base:evalbinop:op=mult"; FD.mul
-        | Div    -> print_endline "base:evalbinop:op=div"; FD.div
-        | Mod    -> print_endline "base:evalbinop:op=mod"; FD.rem
-        | Lt -> print_endline "base:evalbinop:op=lt"; FD.lt
-        | Gt -> print_endline "base:evalbinop:op=gt"; FD.gt
-        | Le -> print_endline "base:evalbinop:op=le"; FD.le
-        | Ge -> print_endline "base:evalbinop:op=ge"; FD.ge
-        | Eq -> print_endline "base:evalbinop:op=eq"; FD.eq
-        | Ne -> print_endline "base:evalbinop:op=ne"; FD.ne
+        | PlusA  -> (*print_endline "base:evalbinop:op=plus";*) FD.add
+        | MinusA -> (*print_endline "base:evalbinop:op=minus";*) FD.sub
+        | Mult   -> (*print_endline "base:evalbinop:op=mult";*) FD.mul
+        | Div    -> (*print_endline "base:evalbinop:op=div";*) FD.div
+        | Mod    -> (*print_endline "base:evalbinop:op=mod";*) FD.rem
+        | Lt -> (*print_endline "base:evalbinop:op=lt";*) FD.lt
+        | Gt -> (*print_endline "base:evalbinop:op=gt";*) FD.gt
+        | Le -> (*print_endline "base:evalbinop:op=le";*) FD.le
+        | Ge -> (*print_endline "base:evalbinop:op=ge";*) FD.ge
+        | Eq -> (*print_endline "base:evalbinop:op=eq";*) FD.eq
+        | Ne -> (*print_endline "base:evalbinop:op=ne";*) FD.ne
         | BAnd -> FD.bitand
         | BOr -> FD.bitor
         | BXor -> FD.bitxor
@@ -261,7 +261,7 @@ struct
         | Shiftrt -> FD.shift_right
         | LAnd -> FD.logand
         | LOr -> FD.logor
-        | _ -> print_endline "base:evalbinop:top"; (fun x y -> FD.top ())
+        | _ -> (*print_endline "base:evalbinop:top";*) (fun x y -> FD.top ())
     (* An auxiliary function for ptr arithmetic on array values. *)
     in let addToAddr n (addr:Addr.t) =
       match Addr.to_var_offset addr with
@@ -275,10 +275,10 @@ struct
       (* The main function! *)
       match a1,a2 with (* TODO wenn nicht int*int dann Top+Warning für Ausgabe bei mod *)
         (* For the integer values, we apply the domain operator *)
-        | `Int v1, `Int v2 -> print_endline "base:evalbinop:int*int"; `Int (int_op v1 v2)
+        | `Int v1, `Int v2 -> (*print_endline "base:evalbinop:int*int";*) `Int (int_op v1 v2)
 	(* Floats *)
-        | `Float v1, `Float v2 -> print_endline "base:evalbinop:float*float"; `Float (float_op v1 v2)
-        | `Int v1, `Float v2 -> let Some v11 = ID.to_int v1 in let _ = (printf "Int %i Float %f" (Int64.to_int v11) (Int64.to_float v11)) in (match ID.to_int v1 with
+        | `Float v1, `Float v2 -> (*print_endline "base:evalbinop:float*float";*) `Float (float_op v1 v2)
+        | `Int v1, `Float v2 -> (*let Some v11 = ID.to_int v1 in let _ = (printf "Int %i Float %f" (Int64.to_int v11) (Int64.to_float v11)) in *)(match ID.to_int v1 with
 		| Some v1 -> `Float (float_op (FD.of_float (Int64.to_float v1)) v2)
 		| None -> raise Top)
         | `Float v1, `Int v2 -> (match ID.to_int v2 with
@@ -361,11 +361,11 @@ struct
   (* evaluate value using our "query functions" *)
   let eval_rv_pre (ask: Q.ask) exp pr =
     let binop op e1 e2 =
-      let equality () = print_string "base:eval_rv_pre:equality:";
+      let equality () = (*print_string "base:eval_rv_pre:equality:";*)
         match ask (Q.ExpEq (e1,e2)) with
-          | `Int 0L -> print_endline "false"; Some false
-          | `Int _ -> print_endline "true"; Some true
-          | _ -> print_endline "none"; None
+          | `Int 0L -> (*print_endline "false";*) Some false
+          | `Int _ -> (*print_endline "true";*) Some true
+          | _ -> (*print_endline "none";*) None
       in
       match op with
         | Cil.MinusA
@@ -409,7 +409,7 @@ struct
       (* Integer literals *)
       | Cil.Const (Cil.CInt64 (num,typ,str)) -> `Int (ID.of_int num)
       (* Float literals *)
-      | Cil.Const (Cil.CReal (num,typ,str)) -> let _ = printf "base:eval_rv:Found Const Float: %f\n" num in `Float (FD.of_float num)
+      | Cil.Const (Cil.CReal (num,typ,str)) -> (*let _ = printf "base:eval_rv:Found Const Float: %f\n" num in*) `Float (FD.of_float num)
       (* String literals *)
       | Cil.Const (Cil.CStr _)
       | Cil.Const (Cil.CWStr _) -> `Address (AD.str_ptr ())

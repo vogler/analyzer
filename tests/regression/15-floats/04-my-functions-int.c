@@ -3,7 +3,7 @@
 #include<stdlib.h>
 
 
-int getRandom(){ // TODO test params
+int getRandom(){
 	srand(time(NULL));
 	return rand();
 }
@@ -13,9 +13,9 @@ int main() {
 	int r = getRandom();
 
 	if(r){
-		f2 = 3; // f2 immernoch 1.0, funktioniert bei branch
+		f2 = 3;
 	}else{
-		f2 = -3; // same
+		f2 = -3;
 	}
 	// strided intervals
 	assert(f2 >= (-3));
