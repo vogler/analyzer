@@ -3,7 +3,9 @@ Makefile
 config.log
 config.status
 *.swp
+*.ml~
 obj
+*.out
 goblint
 goblint.byte
 goblint.json

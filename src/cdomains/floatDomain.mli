@@ -1,5 +1,5 @@
-(** Abstract Domains for integers. These are domains that support the C
-  * operations on integer values. *)
+(** Abstract Domains for floats. These are domains that support the C
+  * operations on float values. *)
 
 module type S =
 sig
@@ -8,12 +8,12 @@ sig
   (** {b Accessing values of the ADT} *)
 
   val to_float: t -> float option
-  (** Return a single integer value if the value is a known constant, otherwise
+  (** Return a single float value if the value is a known constant, otherwise
     * don't return anything. *)
   val of_float: float -> t
-  (** Transform an integer literal to your internal domain representation. *)
+  (** Transform an float literal to your internal domain representation. *)
   val is_float: t -> bool
-  (** Checks if the element is a definite integer value. If this function
+  (** Checks if the element is a definite float value. If this function
     * returns [true], the above [to_int] should return a real value. *)
 
   val to_bool: t -> bool option
@@ -28,7 +28,7 @@ sig
   val to_excl_list: t -> float list option
   (* Gives a list representation of the excluded values if possible. *)
   val of_excl_list: float list -> t
-  (* Creates a exclusion set from a given list of integers. *)
+  (* Creates a exclusion set from a given list of floats. *)
   val is_excl_list: t -> bool
   (* Checks if the element is an exclusion set. *)
 (*  val of_interval: float -> float -> t*)
@@ -40,7 +40,7 @@ sig
   (** {b Arithmetic operators} *)
 
   val neg: t -> t
-  (** Negating an integer value: [-x] *)
+  (** Negating an float value: [-x] *)
   val add: t -> t -> t
   (** Addition: [x + y] *)
   val sub: t -> t -> t
@@ -50,7 +50,7 @@ sig
   val div: t -> t -> t
   (** Division: [x / y] *)
   val rem: t -> t -> t
-  (** Integer remainder: [x % y] *) 
+  (** float remainder: [x % y] *) 
                        
   (** {b Comparison operators} *)
 
@@ -93,7 +93,7 @@ sig
   val logxor : t -> t -> t
   (** Logical xor: [x xor y] *)
 end
-(** The signature of integral value domains. They need to support all integer
+(** The signature of integral value domains. They need to support all float
   * operations that are allowed in C *)
 
 
@@ -109,19 +109,19 @@ exception Error
 (** {b Predefined domains} *)
 
 module Floats : S with type t = float
-(** The integers with their natural orderings. Calling [top] and [bot] will
+(** The floats with their natural orderings. Calling [top] and [bot] will
   * raise exceptions. *)
 
 module FlatPureFloats : S with type t = float
-(** The integers with flattened orderings. Calling [top] and [bot] or [join]ing
+(** The floats with flattened orderings. Calling [top] and [bot] or [join]ing
     or [meet]ing inequal elements will raise exceptions. *)
 
 module Flattened : S with type t = [`Top | `Lifted of float | `Bot]
-(** This is the typical flattened integer domain used in Kildall's constant
+(** This is the typical flattened float domain used in Kildall's constant
   * propagation. *)
 
 (*module Lifted : S with type t = [`Top | `Lifted of float | `Bot]*)
-(** Artificially bounded integers in their natural ordering. *)
+(** Artificially bounded floats in their natural ordering. *)
 
 module Trier 
 : S with type t = [
@@ -129,7 +129,7 @@ module Trier
     | `Definite of Floats.t
     | `Bot
     ]
-(** The Trier domain. The Flattened integer domain is topped by exclusion sets.
+(** The Trier domain. The Flattened float domain is topped by exclusion sets.
   * Good for analysing branches. *)
 
 
@@ -163,7 +163,7 @@ end
 (** Parameter signature for the [MakeBooleans] functor. *)
 
 module MakeBooleans (Names: BooleansNames): S with type t = bool
-(** Creates an abstract domain for integers represented by boolean values. *)
+(** Creates an abstract domain for floats represented by boolean values. *)
 
 module Booleans: S with type t = bool
 (** Boolean abstract domain, where true is output "True" and false is output

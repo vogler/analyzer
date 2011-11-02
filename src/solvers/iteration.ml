@@ -18,7 +18,7 @@ struct
   module GCache = Cache.OneVar (G.Var)
   module WorkSet = Set.Make (Var)
 
-  module EWC  = EffectWCon.Make(Var)(SD)(Spec.Glob)
+  module EWC  = EffectWCon.Make(Var)(VDom)(G)
   
   let stack_d = ref 0
   let full_trace = false
@@ -56,28 +56,13 @@ struct
     if List.exists (fun y -> xk = key y) xs
     then xs
     else x::xs
-  
-  
-  let solve (system: system) (initialvars: variable list) (start:(Var.t * VDom.t) list): solution' =
-    (* system where every rhs is bottom *)
-    let system0 = system in
-    (* G or list of systems to pick from *)
-    let systems = [system, system0] in
-    (* 1. select an initial system gk from G *)
-    let gk = List.hd systems in
-
-    (* 2. compute a fixed point xk of gk *)
-    let xk = EWC.solve gk initialvars start in
-    (* 3. compute f(xk) *)
-    let fxk = compute system initialvars start in (* TODO replace start with solution *)
-    (* 4. if f(xk) == xk then return xk *)
-    Solver.verify () gk fxk
-    (* 5. Policy improvement. Take gk+1 such that f(xk) == gk+1(xk). Goto 2 *)
-    let gks = List.map (fun sys -> compute sys initialvars start) systems in (* TODO start *)
-    
 
 
   (* type solution'   = var_domain VMap.t * glob_domain GMap.t
+		      = VDom.t Hash.Make(Var) * G.Val.t Hash.Make(G.Var)
+		      = VDom.t Hash.Make(Var) * GDom.t Hash.Make(Glob)
+		      = VDom.t Hash.Make(Var) * Global.S.Val.t Hash.Make(G.Var)
+		      = VDom.t Hash.Make(Var) * Lattice.S.t Hash.Make(G.Var)
      start: variable * var_domain
    *)
   let compute (system: system) (initialvars: variable list) (start:(Var.t * VDom.t) list): solution' =
@@ -164,7 +149,6 @@ struct
     end end;
     if !GU.eclipse then show_worked_buf 1
           
-
     and vEval (c: constrain * int) var =
       if !GU.eclipse then show_add_work_buf 1;
       (*constrainOneVar var;*)
@@ -193,4 +177,47 @@ struct
           unsafe := [];
       done;*)
       (sigma, theta)
+
+
+  
+  let hash_to_list hashtbl =
+    VMap.fold (fun key v xs -> (key,v)::xs) hashtbl []
+  
+
+  (* system: system of constraints
+     initialvars: list of identifiers?
+     start: list of (type of equation variable * type of value domain)
+
+     system -> variable list -> (variable * var_domain) list -> solution'
+  *)
+  let solve (system: system) (initialvars: variable list) (start:(Var.t * VDom.t) list): solution' =
+    (* TODO system where every rhs is bottom *)
+    let system0 = system in
+    (* G or list of systems to pick from *)
+    let systems = [system; system0] in
+    (* 1. select an initial system gk from G *)
+    let gkstart = List.hd systems in
+
+    let rec iterate gk =
+      (* 2. compute a fixed point xk of gk *)
+      let xk = EWC.solve gk initialvars start in
+      let sigma, theta = xk in
+      let xkstart = hash_to_list sigma in
+
+      (* 3. compute f(xk) *)
+      let fxk = compute gk initialvars xkstart in (* TODO replace start with solution *)
+      
+      (* 4. if f(xk) == xk then return xk *)
+      (* access to 'correct'? If not we need verify that returns true/false *)
+      let _ = verify () gk fxk in 
+      if fxk = xk then xk else
+      
+	(* 5. Policy improvement. Take gk+1 such that f(xk) == gk+1(xk). Goto 2 *)
+	let gks = List.map (fun sys -> let fgk = compute sys initialvars xkstart in (sys,fgk)) systems in (* TODO start *)
+	let gknext,fgk = List.find (fun (sys,fgk) -> fgk = fxk) gks in
+	iterate gknext
+
+    in iterate gkstart
+
+
 end 
