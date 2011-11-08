@@ -447,10 +447,18 @@ struct
        | Cil.CastE  (t, exp) -> begin
            match t,eval_rv a gs st exp with
              | Cil.TPtr (_,_), `Top -> `Address (AD.top ())
-              | Cil.TPtr _, `Int a when Some Int64.zero = ID.to_int a -> 
+             | Cil.TPtr _, `Int a when Some Int64.zero = ID.to_int a -> 
                   `Address (AD.null_ptr ())
-              | Cil.TInt _, `Address a when AD.equal a (AD.null_ptr()) -> 
+             | Cil.TInt _, `Address a when AD.equal a (AD.null_ptr()) -> 
                   `Int (ID.of_int Int64.zero)
+	     | Cil.TFloat (fkind, attr), s ->
+		  let tto = match fkind with FFloat -> "float" | FDouble -> "double" | FLongDouble -> "long double" in
+		  let tfrom, f = match s with
+(* 		    | `Int a -> "int", `Float (FD.of_float (Int64.to_float (ID.to_int a))) *)
+		    | `Float a -> "FloatDomain", `Float a (* TODO get type of a *)
+		    | _ -> "something", s
+		  in
+		  let _ = printf"CAST from %s to %s with %i attributes\n" tfrom tto (List.length attr) in f
              | _, s -> s
        end
       | _ -> print_endline "base:eval_rv:VD.top"; VD.top ()
