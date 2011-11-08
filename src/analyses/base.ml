@@ -278,12 +278,13 @@ struct
         | `Int v1, `Int v2 -> (*print_endline "base:evalbinop:int*int";*) `Int (int_op v1 v2)
 	(* Floats *)
         | `Float v1, `Float v2 -> (*print_endline "base:evalbinop:float*float";*) `Float (float_op v1 v2)
-        | `Int v1, `Float v2 -> (*let Some v11 = ID.to_int v1 in let _ = (printf "Int %i Float %f" (Int64.to_int v11) (Int64.to_float v11)) in *)(match ID.to_int v1 with
+        | `Int v1, `Float v2 -> (*let Some v11 = ID.to_int v1 in let _ = (printf "Int %i Float %f" (Int64.to_int v11) (Int64.to_float v11)) in *)
+		(match ID.to_int v1 with
 		| Some v1 -> `Float (float_op (FD.of_float (Int64.to_float v1)) v2)
-		| None -> raise Top)
+		| None -> `Float (FD.top ()))
         | `Float v1, `Int v2 -> (match ID.to_int v2 with
 		| Some v2 -> `Float (float_op v1 (FD.of_float (Int64.to_float v2)))
-		| None -> raise Top)
+		| None -> `Float (FD.top ()))
         (* For address +/- value, we try to do some elementary ptr arithmetic *)
         | `Address p, `Int n  -> begin
             try match op with
@@ -409,7 +410,11 @@ struct
       (* Integer literals *)
       | Cil.Const (Cil.CInt64 (num,typ,str)) -> `Int (ID.of_int num)
       (* Float literals *)
-      | Cil.Const (Cil.CReal (num,typ,str)) -> (*let _ = printf "base:eval_rv:Found Const Float: %f\n" num in*) `Float (FD.of_float num)
+      | Cil.Const (Cil.CReal (num,typ,str)) ->
+(*	  let t = match typ with FFloat -> "float" | FDouble -> "double" | FLongDouble -> "long double" in
+	  let str = match str with Some str -> str | None -> "" in
+	  let _ = printf "base:eval_rv:Found Const Real of type %s: %s (%.15g)\n" t str num in*)
+	  `Float (FD.of_float num)
       (* String literals *)
       | Cil.Const (Cil.CStr _)
       | Cil.Const (Cil.CWStr _) -> `Address (AD.str_ptr ())
@@ -587,6 +592,14 @@ struct
                         Some (x, `Int (ID.of_excl_list [n]))
                     | None -> None
                 end
+              | `Float n -> begin
+                  match FD.to_float n with
+                    | Some n ->
+                        (* When x != n, we can return a singleton exclusion set *)
+                        if M.tracing then M.tracec "invariant" "Yes, %a is not %g\n" Cil.d_lval x n;
+                        Some (x, `Float (FD.of_excl_list [n]))
+                    | None -> None
+                end
               | `Address n -> begin
                   if M.tracing then M.tracec "invariant" "Yes, %a is not %a\n" Cil.d_lval x AD.pretty n;
                   match eval_rv a gs st (Cil.Lval x) with
@@ -750,6 +763,13 @@ struct
           let v = fromJust (ID.to_bool value) in
             (* Eliminate the dead branch and just propagate to the true branch *)
             if v == tv then ctx.local else raise Deadcode
+      | `Float value when (FD.is_bool value) -> 
+          if M.tracing then M.traceu "branch" "Expression %a evaluated to %a\n" d_exp exp FD.pretty value;
+          (* to suppress pattern matching warnings: *)
+          let fromJust x = match x with Some x -> x | None -> assert false in
+          let v = fromJust (FD.to_bool value) in
+            (* Eliminate the dead branch and just propagate to the true branch *)
+            if v == tv then ctx.local else raise Deadcode
       | `Bot ->
           if M.tracing then M.traceu "branch" "The branch %B is dead!\n" tv;
           raise Deadcode
@@ -878,6 +898,7 @@ struct
         | `Address a when not (AD.is_top a) -> 
             List.map (invalidate_address st) (reachable_vars ask [a] gs st)
         | `Int _ -> []
+        | `Float _ -> []
         | _ -> let expr = sprint ~width:80 (Cil.d_exp () e) in
             M.warn ("Failed to invalidate unknown address: " ^ expr); []
     in
@@ -952,6 +973,11 @@ struct
       | Q.EvalInt e -> begin
             match eval_rv ctx.ask ctx.global ctx.local e with
               | `Int e -> (match ID.to_int e with Some i -> `Int i | _ -> `Top) 
+              | _ -> print_endline (sprint 80 (d_exp () e)); `Top
+          end
+      | Q.EvalFloat e -> begin
+            match eval_rv ctx.ask ctx.global ctx.local e with
+              | `Float e -> (match FD.to_float e with Some f -> `Float f | _ -> `Top) 
               | _ -> print_endline (sprint 80 (d_exp () e)); `Top
           end
       | Q.MayPointTo e -> begin

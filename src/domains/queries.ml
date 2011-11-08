@@ -35,6 +35,7 @@ type t = ExpEq of exp * exp
        | CurrentThreadId      (* currently "main" -> `Int 1; "other" -> `Top *)
        | EvalFunvar of exp
        | EvalInt of exp
+       | EvalFloat of exp
        | TheAnswerToLifeUniverseAndEverything
 
 type result = [
@@ -173,6 +174,7 @@ struct
       | (`Bot, x) 
       | (x, `Bot) -> x
       | (`Int x, `Int y) -> `Int (ID.join x y)
+      | (`Float x, `Float y) -> `Float (FD.join x y)
       | (`Bool x, `Bool y) -> `Bool (BD.join x y)
       | (`LvalSet x, `LvalSet y) -> `LvalSet (LS.join x y)
       | (`ExprSet x, `ExprSet y) -> `ExprSet (ES.join x y)
@@ -187,6 +189,7 @@ struct
       | (`Top, x) 
       | (x, `Top) -> x
       | (`Int x, `Int y) -> `Int (ID.meet x y)
+      | (`Float x, `Float y) -> `Float (FD.meet x y)
       | (`Bool x, `Bool y) -> `Bool (BD.meet x y)
       | (`LvalSet x, `LvalSet y) -> `LvalSet (LS.meet x y)
       | (`ExprSet x, `ExprSet y) -> `ExprSet (ES.meet x y)
@@ -201,7 +204,7 @@ struct
       | (`Bot, x) 
       | (x, `Bot) -> x
       | (`Int x, `Int y) -> `Int (ID.widen x y)
-      | (`Float x, `Float y) -> `Float (FD.join x y)
+      | (`Float x, `Float y) -> `Float (FD.widen x y)
       | (`Bool x, `Bool y) -> `Bool (BD.widen x y)
       | (`LvalSet x, `LvalSet y) -> `LvalSet (LS.widen x y)
       | (`ExprSet x, `ExprSet y) -> `ExprSet (ES.widen x y)
