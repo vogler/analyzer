@@ -277,7 +277,7 @@ struct
         (* For the integer values, we apply the domain operator *)
         | `Int v1, `Int v2 -> (*print_endline "base:evalbinop:int*int";*) `Int (int_op v1 v2)
 	(* Floats *)
-        | `Float v1, `Float v2 -> (*print_endline "base:evalbinop:float*float";*) `Float (float_op v1 v2)
+        | `Float v1, `Float v2 -> ignore(printf "base:evalbinop:float*float:%s %s\n" (FD.short 1 v1) (FD.short 1 v2)); `Float (float_op v1 v2)
         | `Int v1, `Float v2 -> (*let Some v11 = ID.to_int v1 in let _ = (printf "Int %i Float %f" (Int64.to_int v11) (Int64.to_float v11)) in *)
 		(match ID.to_int v1 with
 		| Some v1 -> `Float (float_op (FD.of_float (Int64.to_float v1)) v2)
@@ -411,10 +411,15 @@ struct
       | Cil.Const (Cil.CInt64 (num,typ,str)) -> `Int (ID.of_int num)
       (* Float literals *)
       | Cil.Const (Cil.CReal (num,typ,str)) ->
-(*	  let t = match typ with FFloat -> "float" | FDouble -> "double" | FLongDouble -> "long double" in
+	  let t = match typ with FFloat -> "float" | FDouble -> "double" | FLongDouble -> "long double" in
 	  let str = match str with Some str -> str | None -> "" in
-	  let _ = printf "base:eval_rv:Found Const Real of type %s: %s (%.15g)\n" t str num in*)
-	  `Float (FD.of_float num)
+	  let _ = printf "base:eval_rv:Found Const Real of type %s: %s (%.15g)\n" t str num in
+	  let value = match typ with (* float_of_string doesn't recognize f-suffix *)
+	      | FDouble
+	      | FLongDouble -> num
+	      | FFloat -> num
+	  in
+	  `Float (FD.of_float value)
       (* String literals *)
       | Cil.Const (Cil.CStr _)
       | Cil.Const (Cil.CWStr _) -> `Address (AD.str_ptr ())
@@ -452,13 +457,16 @@ struct
              | Cil.TInt _, `Address a when AD.equal a (AD.null_ptr()) -> 
                   `Int (ID.of_int Int64.zero)
 	     | Cil.TFloat (fkind, attr), s ->
-		  let tto = match fkind with FFloat -> "float" | FDouble -> "double" | FLongDouble -> "long double" in
+(* 		  let pto = match fkind with FFloat -> "float" | FDouble -> "double" | FLongDouble -> "long double" in *)
+		  let to_fkind = Pretty.sprint 1 (Cil.d_fkind () fkind) in
 		  let tfrom, f = match s with
 (* 		    | `Int a -> "int", `Float (FD.of_float (Int64.to_float (ID.to_int a))) *)
 		    | `Float a -> "FloatDomain", `Float a (* TODO get type of a *)
 		    | _ -> "something", s
 		  in
-		  let _ = printf"CAST from %s to %s with %i attributes\n" tfrom tto (List.length attr) in f
+		  let from_exp = sprint 1 (d_exp () exp) in
+		  let from_type = sprint 1 (d_type () (Cil.typeOf exp)) in
+		  let _ = printf "CAST from exp %s with type %s to %s\n" from_exp from_type to_fkind in f
              | _, s -> s
        end
       | _ -> print_endline "base:eval_rv:VD.top"; VD.top ()
