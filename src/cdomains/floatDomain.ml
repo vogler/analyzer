@@ -52,6 +52,7 @@ end
 exception Unknown
 exception Error
 
+
 module Floats : S with type t = float  =
 struct
   include Printable.Std
@@ -119,6 +120,49 @@ struct
   let logxor n1 n2 = let a = (to_bool' n1) in let b = (to_bool' n2) in of_bool (a && (not b) || (not a) && b)
   let pretty_diff () (x,y) = dprintf "%s: %a instead of %a" (name ()) pretty x pretty y
 end
+
+
+module type SigConversion =
+sig
+  type t
+  val doubleToFloat: float -> float
+  val doubleToFloatDomain: t -> t
+end
+
+module Conversion (Base: S) =
+struct
+  type t = Base.t
+  let slice x a b = Int64.shift_right_logical (Int64.shift_left x (63-b)) ((63-b)+a)
+
+  (* splits a float into a tuple (sign, exponent, mantissa) *)
+  let splitFloat x =
+    let x = Int64.bits_of_float x in
+    let slice a b = slice x a b in
+    (slice 63 63, slice 52 62, slice 0 51)
+
+  let reassembleFloat (s,e,m) =
+    Int64.logor (Int64.shift_left s 63) (Int64.logor (Int64.shift_left e 52) m)
+
+  let doubleToFloat x =
+    let s,e,m = splitFloat x in
+    (* e from 11 to 8 bits > take sign + lowest 7 bits *)
+    let es = Int64.shift_left (slice e 10 10) 10 in
+    let e = Int64.logor es (slice e 0 6) in
+    (* m from 52 to 23 bits > take highest 23 bits *)
+    let m = Int64.shift_left (slice m 29 51) 29 in
+    Int64.float_of_bits (reassembleFloat (s,e,m))
+
+  let doubleToFloatDomain x =
+    match Base.to_float x with
+      | Some x -> Base.of_float (doubleToFloat x)
+      | _ -> x
+
+  let convert x =
+    match Floats.to_float x with
+      | Some x -> x
+      | _ -> x
+end
+
 
 module FlatPureFloats =
 struct

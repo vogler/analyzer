@@ -9,6 +9,7 @@ module GU = Goblintutil
 module ID = ValueDomain.ID
 module IntSet = SetDomain.Make (IntDomain.Integers)
 module FD = ValueDomain.FD
+module FDC = FloatDomain.Conversion (FD)
 module AD = ValueDomain.AD
 module Addr = ValueDomain.Addr
 module Offs = ValueDomain.Offs
@@ -411,13 +412,13 @@ struct
       | Cil.Const (Cil.CInt64 (num,typ,str)) -> `Int (ID.of_int num)
       (* Float literals *)
       | Cil.Const (Cil.CReal (num,typ,str)) ->
-	  let t = match typ with FFloat -> "float" | FDouble -> "double" | FLongDouble -> "long double" in
+(*	  let t = match typ with FFloat -> "float" | FDouble -> "double" | FLongDouble -> "long double" in
 	  let str = match str with Some str -> str | None -> "" in
-	  let _ = printf "base:eval_rv:Found Const Real of type %s: %s (%.15g)\n" t str num in
+	  let _ = printf "base:eval_rv:Found Const Real of type %s: %s (%.15g)\n" t str num in*)
 	  let value = match typ with (* float_of_string doesn't recognize f-suffix *)
-	      | FDouble
-	      | FLongDouble -> num
-	      | FFloat -> num
+	      | FLongDouble
+	      | FDouble -> num
+	      | FFloat -> FDC.doubleToFloat num
 	  in
 	  `Float (FD.of_float value)
       (* String literals *)
@@ -457,16 +458,15 @@ struct
              | Cil.TInt _, `Address a when AD.equal a (AD.null_ptr()) -> 
                   `Int (ID.of_int Int64.zero)
 	     | Cil.TFloat (fkind, attr), s ->
-(* 		  let pto = match fkind with FFloat -> "float" | FDouble -> "double" | FLongDouble -> "long double" in *)
-		  let to_fkind = Pretty.sprint 1 (Cil.d_fkind () fkind) in
-		  let tfrom, f = match s with
-(* 		    | `Int a -> "int", `Float (FD.of_float (Int64.to_float (ID.to_int a))) *)
-		    | `Float a -> "FloatDomain", `Float a (* TODO get type of a *)
-		    | _ -> "something", s
-		  in
 		  let from_exp = sprint 1 (d_exp () exp) in
 		  let from_type = sprint 1 (d_type () (Cil.typeOf exp)) in
-		  let _ = printf "CAST from exp %s with type %s to %s\n" from_exp from_type to_fkind in f
+		  let to_fkind = Pretty.sprint 1 (Cil.d_fkind () fkind) in
+		  let _ = printf "CAST of exp %s from type %s to %s\n" from_exp from_type to_fkind in
+		  begin match s, fkind with
+(* 		    | `Int a -> "int", `Float (FD.of_float (Int64.to_float (ID.to_int a))) *)
+		    | `Float a, FFloat -> `Float (FDC.doubleToFloatDomain a)
+		    | _, _ -> s
+		  end
              | _, s -> s
        end
       | _ -> print_endline "base:eval_rv:VD.top"; VD.top ()

@@ -112,6 +112,15 @@ module Floats : S with type t = float
 (** The floats with their natural orderings. Calling [top] and [bot] will
   * raise exceptions. *)
 
+module type SigConversion =
+sig
+  type t
+  val doubleToFloat: float -> float
+  val doubleToFloatDomain: t -> t
+end
+module Conversion (Base: S) : SigConversion with type t = Base.t
+(** Conversion between different kinds of floats *)
+
 module FlatPureFloats : S with type t = float
 (** The floats with flattened orderings. Calling [top] and [bot] or [join]ing
     or [meet]ing inequal elements will raise exceptions. *)
