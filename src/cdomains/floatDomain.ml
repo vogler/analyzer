@@ -127,6 +127,8 @@ sig
   type t
   val doubleToFloat: float -> float
   val doubleToFloatDomain: t -> t
+  val bitstringOfInt64: int64 -> string
+  val bitstringOfFloat: float -> string
 end
 
 module Conversion (Base: S) =
@@ -146,8 +148,8 @@ struct
   let doubleToFloat x =
     let s,e,m = splitFloat x in
     (* e from 11 to 8 bits > take sign + lowest 7 bits *)
-    let es = Int64.shift_left (slice e 10 10) 10 in
-    let e = Int64.logor es (slice e 0 6) in
+(*    let es = Int64.shift_left (slice e 10 10) 10 in
+    let e = Int64.logor es (slice e 0 6) in*)
     (* m from 52 to 23 bits > take highest 23 bits *)
     let m = Int64.shift_left (slice m 29 51) 29 in
     Int64.float_of_bits (reassembleFloat (s,e,m))
@@ -157,10 +159,15 @@ struct
       | Some x -> Base.of_float (doubleToFloat x)
       | _ -> x
 
-  let convert x =
-    match Floats.to_float x with
-      | Some x -> x
-      | _ -> x
+  let bitstringOfInt64 i =
+    let rec strip_bits i s =
+      match Int64.compare i Int64.zero with
+      | 0 -> s
+      | _ -> strip_bits (Int64.shift_right_logical i 1) ((Int64.to_string (Int64.logand i Int64.one)) ^ s) in
+    strip_bits i ""
+
+  let bitstringOfFloat f = bitstringOfInt64 (Int64.bits_of_float f)
+
 end
 
 

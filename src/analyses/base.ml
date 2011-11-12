@@ -420,6 +420,8 @@ struct
 	      | FDouble -> num
 	      | FFloat -> FDC.doubleToFloat num
 	  in
+	  let fkind = Pretty.sprint 1 (Cil.d_fkind () typ) in
+	  let _ = printf "CONST of type %s with orignial value %f (0b%s) and new value %f (0b%s)\n" fkind num (FDC.bitstringOfFloat num) value (FDC.bitstringOfFloat value) in
 	  `Float (FD.of_float value)
       (* String literals *)
       | Cil.Const (Cil.CStr _)

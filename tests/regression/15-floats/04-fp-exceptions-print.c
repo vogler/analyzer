@@ -12,6 +12,7 @@ int main(){
   // float
   printf("3.4e38: %e\n", 3.4e38f); // 3.4e38
   printf("3.5e38: %e\n", 3.5e38f); // inf
+  // printf("isfinite(3.5e38f): %i\n", isfinite(3.5e38f)); // 0
   printf("3.4e38f==3.4e38: %i\n", 3.4e38f==3.4e38); // 0
   // warning: floating constant exceeds range of ‘float’
 

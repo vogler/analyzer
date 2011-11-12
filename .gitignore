@@ -4,6 +4,7 @@ config.log
 config.status
 *.swp
 *.ml~
+*.mli~
 obj
 *.out
 goblint

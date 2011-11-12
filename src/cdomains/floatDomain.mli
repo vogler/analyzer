@@ -117,6 +117,8 @@ sig
   type t
   val doubleToFloat: float -> float
   val doubleToFloatDomain: t -> t
+  val bitstringOfInt64: int64 -> string
+  val bitstringOfFloat: float -> string
 end
 module Conversion (Base: S) : SigConversion with type t = Base.t
 (** Conversion between different kinds of floats *)
