@@ -135,6 +135,8 @@ module Conversion (Base: S) =
 struct
   type t = Base.t
   let slice x a b = Int64.shift_right_logical (Int64.shift_left x (63-b)) ((63-b)+a)
+  let mask x a b = Int64.shift_left (slice x a b) a
+  let bit x p = 0 = Int64.compare Int64.one (slice x p p)
 
   (* splits a float into a tuple (sign, exponent, mantissa) *)
   let splitFloat x =
@@ -145,13 +147,37 @@ struct
   let reassembleFloat (s,e,m) =
     Int64.logor (Int64.shift_left s 63) (Int64.logor (Int64.shift_left e 52) m)
 
+  let round x d =
+    let xa = bit x d in
+    let xb = bit x (d-1) in
+    let left = slice x d 51 in (* [51, xa] *)
+    let rest = slice x 0 (d-2) in (* ]xb, 0] *)
+    let restZero = 0 = Int64.compare Int64.zero rest in
+    let roundUp () =
+      Int64.shift_left (Int64.add left Int64.one) d
+    in
+    let roundDown () =
+      Int64.shift_left left d
+    in
+    match xb with
+    | false -> roundDown ()
+    | true  ->
+      match restZero with
+      | false -> roundUp ()
+      | true  ->
+	match xa with
+	| false -> roundDown ()
+	| true  -> roundUp ()
+
   let doubleToFloat x =
     let s,e,m = splitFloat x in
-    (* e from 11 to 8 bits > take sign + lowest 7 bits *)
-(*    let es = Int64.shift_left (slice e 10 10) 10 in
-    let e = Int64.logor es (slice e 0 6) in*)
-    (* m from 52 to 23 bits > take highest 23 bits *)
-    let m = Int64.shift_left (slice m 29 51) 29 in
+    (* e from 11 to 8 bits > take sign + lowest 7 bits *) (* TODO exponent overflow *)
+    (* let es = mask e 10 10 in
+    let e = Int64.logor es (slice e 0 6) in *)
+    (* round mantissa to 23 binary digits *)
+    let m = round m 29 in
+    (* just to be sure: m from 52 to 23 bits > take highest 23 bits *)
+    let m = mask m 29 51 in
     Int64.float_of_bits (reassembleFloat (s,e,m))
 
   let doubleToFloatDomain x =
