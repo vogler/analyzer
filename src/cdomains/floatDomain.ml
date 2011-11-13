@@ -136,7 +136,7 @@ struct
   type t = Base.t
   let slice x a b = Int64.shift_right_logical (Int64.shift_left x (63-b)) ((63-b)+a)
   let mask x a b = Int64.shift_left (slice x a b) a
-  let bit x p = 0 = Int64.compare Int64.one (slice x p p)
+  let bit x p = 1L = slice x p p
 
   (* splits a float into a tuple (sign, exponent, mantissa) *)
   let splitFloat x =
@@ -152,9 +152,9 @@ struct
     let xb = bit x (d-1) in
     let left = slice x d 51 in (* [51, xa] *)
     let rest = slice x 0 (d-2) in (* ]xb, 0] *)
-    let restZero = 0 = Int64.compare Int64.zero rest in
+    let restZero = rest = 0L in
     let roundUp () =
-      Int64.shift_left (Int64.add left Int64.one) d
+      Int64.shift_left (Int64.add left 1L) d
     in
     let roundDown () =
       Int64.shift_left left d
@@ -187,9 +187,9 @@ struct
 
   let bitstringOfInt64 i =
     let rec strip_bits i s =
-      match Int64.compare i Int64.zero with
-      | 0 -> s
-      | _ -> strip_bits (Int64.shift_right_logical i 1) ((Int64.to_string (Int64.logand i Int64.one)) ^ s) in
+      match i = 0L with
+      | true  -> s
+      | false -> strip_bits (Int64.shift_right_logical i 1) ((Int64.to_string (Int64.logand i 1L)) ^ s) in
     strip_bits i ""
 
   let bitstringOfFloat f = bitstringOfInt64 (Int64.bits_of_float f)

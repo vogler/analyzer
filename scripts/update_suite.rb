@@ -251,6 +251,20 @@ File.open(theresultfile, "w") do |f|
         if warnings[idx] != "race" then correct += 1 
         else ferr = idx if ferr.nil? or idx < ferr end
       end
+      
+      color = nil
+      if ferr == idx
+        color = "red"
+      elsif type == "assert" and warnings[idx] == "success"
+        color = "green"
+      end
+      if not color.nil?
+        #puts "found new error in line #{idx}"
+        orgfile = File.join(testresults, p.name + ".c.html")
+        text = File.read(orgfile)
+        text = text.gsub(/a name="line#{idx}"/, "a name=\"line#{idx}\" style=\"color: #{color}\"")
+        File.open(orgfile, "w"){|file| file.puts text}
+      end
     end
     f.puts "<td><a href=\"#{warnfile}\">#{correct} of #{p.warnings.size}</a></td>"
 
