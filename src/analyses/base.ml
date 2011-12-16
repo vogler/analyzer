@@ -8,7 +8,7 @@ module Q = Queries
 module GU = Goblintutil
 module ID = ValueDomain.ID
 module IntSet = SetDomain.Make (IntDomain.Integers)
-module FD = ValueDomain.FD
+module FD = ValueDomain.FD (* FloatDomain.S = FloatDomain.FloatDomList *)
 module FDC = FloatDomain.Conversion (FD)
 module AD = ValueDomain.AD
 module Addr = ValueDomain.Addr
@@ -279,11 +279,12 @@ struct
         | `Int v1, `Int v2 -> (*print_endline "base:evalbinop:int*int";*) `Int (int_op v1 v2)
 	(* Floats *)
         | `Float v1, `Float v2 -> ignore(printf "base:evalbinop:float*float:%s %s\n" (FD.short 1 v1) (FD.short 1 v2)); `Float (float_op v1 v2)
-        | `Int v1, `Float v2 -> (*let Some v11 = ID.to_int v1 in let _ = (printf "Int %i Float %f" (Int64.to_int v11) (Int64.to_float v11)) in *)
+        | `Int v1, `Float v2 -> ignore(printf "Int %s Float %s" (ID.short 1 v1) (FD.short 1 v2));
 		(match ID.to_int v1 with
 		| Some v1 -> `Float (float_op (FD.of_float (Int64.to_float v1)) v2)
 		| None -> `Float (FD.top ()))
-        | `Float v1, `Int v2 -> (match ID.to_int v2 with
+        | `Float v1, `Int v2 -> ignore(printf "Float %s Int %s" (FD.short 1 v1) (ID.short 1 v2));
+		(match ID.to_int v2 with
 		| Some v2 -> `Float (float_op v1 (FD.of_float (Int64.to_float v2)))
 		| None -> `Float (FD.top ()))
         (* For address +/- value, we try to do some elementary ptr arithmetic *)
@@ -465,8 +466,8 @@ struct
 		  let to_fkind = Pretty.sprint 1 (Cil.d_fkind () fkind) in
 		  let _ = printf "CAST of exp %s from type %s to %s\n" from_exp from_type to_fkind in
 		  begin match s, fkind with
-(* 		    | `Int a -> "int", `Float (FD.of_float (Int64.to_float (ID.to_int a))) *)
-		    | `Float a, FFloat -> `Float (FDC.doubleToFloatDomain a)
+		    | `Int a, _		-> `Float (FDC.of_int (ID.to_int a))
+		    | `Float a, FFloat	-> `Float (FDC.doubleToFloatDomain a)
 		    | _, _ -> s
 		  end
              | _, s -> s
@@ -1224,6 +1225,18 @@ struct
             | Some fnc -> [map_true (invalidate ctx.ask gs st (lv_list @ (fnc `Write  args)))];
             | None -> (
                 M.warn ("Function definition missing for " ^ f.vname);
+		let s_funtype = (sprint 1 (d_type () f.vtype)) in
+		if f.vname = "fesetround" && s_funtype = "int (int __rounding_direction )" then begin
+		  M.warn ("fesetround called: "^s_funtype);
+(* 		  let s_arg = sprint 1 (d_exp () (List.hd args)) in *)
+		  let old_mode = FDC.current_mode () in
+		  let vals = List.map (eval_rv ctx.ask ctx.global st) args in
+		  match List.hd vals with
+		    | `Int x -> (match ID.to_int x with
+			| Some x -> FDC.mode := (Int64.to_int x); M.warn ("Changed rounding mode from "^old_mode^" to "^(FDC.current_mode ()))
+			| _ -> ());
+		    | _ -> ();
+		end;
                 let st_expr (v:varinfo) (value) a = 
                   if is_global ctx.ask v && not (is_static v) then 
                     Cil.mkAddrOf (Var v, NoOffset) :: a 

@@ -115,10 +115,13 @@ module Floats : S with type t = float
 module type SigConversion =
 sig
   type t
+  val mode: int ref
+  val current_mode: unit -> string
   val doubleToFloat: float -> float
   val doubleToFloatDomain: t -> t
   val bitstringOfInt64: int64 -> string
   val bitstringOfFloat: float -> string
+  val of_int: int64 option -> t
 end
 module Conversion (Base: S) : SigConversion with type t = Base.t
 (** Conversion between different kinds of floats *)

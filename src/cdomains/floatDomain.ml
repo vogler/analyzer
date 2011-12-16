@@ -99,13 +99,13 @@ struct
   let div x y = (* nan instead? *)
     match y with 
       | 0.0 -> raise Division_by_zero  (* -- this is for a bug (#253) where div throws *) 
-      | _  -> x /. y           (*    sigfpe and ocaml has somehow forgotten how to deal with it*)
+      | _  -> x /. y			(*    sigfpe and ocaml has somehow forgotten how to deal with it*)
   let rem  = mod_float
   let lt n1 n2 = of_bool (n1 <  n2)
   let gt n1 n2 = of_bool (n1 >  n2)
   let le n1 n2 = of_bool (n1 <= n2)
   let ge n1 n2 = of_bool (n1 >= n2)
-  let eq n1 n2 = let _ = printf "float:eq: %f = %f -> %B\n" n1 n2 (n1=n2) in of_bool (n1 =  n2)
+  let eq n1 n2 = let _ = printf "float:eq: %f = %f -> %B\n" n1 n2 (n1=n2) in of_bool (n1 = n2)
   let ne n1 n2 = of_bool (n1 <> n2)
   let bit' f x y = Int64.float_of_bits (f (Int64.bits_of_float x) (Int64.bits_of_float y))
   let bitnot x = Int64.float_of_bits (Int64.lognot (Int64.bits_of_float x))
@@ -125,15 +125,31 @@ end
 module type SigConversion =
 sig
   type t
+  val mode: int ref
+  val current_mode: unit -> string
   val doubleToFloat: float -> float
   val doubleToFloatDomain: t -> t
   val bitstringOfInt64: int64 -> string
   val bitstringOfFloat: float -> string
+  val of_int: int64 option -> t
 end
 
 module Conversion (Base: S) =
 struct
   type t = Base.t
+
+  let mode = ref 0
+
+  let string_of_mode x =
+    match x with
+      | 0 -> "FE_TONEAREST"
+      | 1024 -> "FE_DOWNWARD"
+      | 2048 -> "FE_UPWARD"
+      | 3072 -> "FE_TOWARDZERO"
+      | _ -> "unknown rounding mode"
+
+  let current_mode () = string_of_mode !mode
+
   let slice x a b = Int64.shift_right_logical (Int64.shift_left x (63-b)) ((63-b)+a)
   let mask x a b = Int64.shift_left (slice x a b) a
   let bit x p = 1L = slice x p p
@@ -147,38 +163,74 @@ struct
   let reassembleFloat (s,e,m) =
     Int64.logor (Int64.shift_left s 63) (Int64.logor (Int64.shift_left e 52) m)
 
-  let round x d =
+
+(*  let round_downward (up, down) xb restZero =
+    match xb with
+    | false -> down		(* < .5 *)
+    | true  ->			(* >= .5 *)
+      match restZero with
+      | false -> up		(* > .5 *)
+      | true  -> down		(* = .5 *)
+
+  let round_upward (up, down) xb =
+    match xb with
+    | false -> down		(* < .5 *)
+    | true  -> up		(* >= .5 *)*)
+
+  let round_towardZero (up, down) s =
+    match s = 0L with
+    | true -> down		(* positive *)
+    | false  -> up		(* negative *)
+
+  let round_toNearest (up, down) xa =
+    match xa with
+    | false -> down		(* 2.5 *)
+    | true  -> up		(* 1.5 *)
+
+  let round s x d =
     let xa = bit x d in
     let xb = bit x (d-1) in
     let left = slice x d 51 in (* [51, xa] *)
     let rest = slice x 0 (d-2) in (* ]xb, 0] *)
     let restZero = rest = 0L in
-    let roundUp () =
+    let roundUp =
       Int64.shift_left (Int64.add left 1L) d
     in
-    let roundDown () =
+    let roundDown =
       Int64.shift_left left d
     in
     match xb with
-    | false -> roundDown ()
-    | true  ->
+    | false -> roundDown	(* < .5 *)
+    | true  ->			(* >= .5 *)
       match restZero with
-      | false -> roundUp ()
-      | true  ->
-	match xa with
-	| false -> roundDown ()
-	| true  -> roundUp ()
+      | false -> roundUp	(* > .5 *)
+      | true  ->		(* = .5 *)
+	  let f = roundUp, roundDown in
+	  match current_mode () with
+	    | "FE_DOWNWARD"	-> roundDown
+	    | "FE_UPWARD"	-> roundUp
+	    | "FE_TOWARDZERO"	-> round_towardZero f s
+	    | _ 		-> round_toNearest f xa
 
   let doubleToFloat x =
-    let s,e,m = splitFloat x in
-    (* e from 11 to 8 bits > take sign + lowest 7 bits *) (* TODO exponent overflow *)
-    (* let es = mask e 10 10 in
-    let e = Int64.logor es (slice e 0 6) in *)
-    (* round mantissa to 23 binary digits *)
-    let m = round m 29 in
-    (* just to be sure: m from 52 to 23 bits > take highest 23 bits *)
-    let m = mask m 29 51 in
-    Int64.float_of_bits (reassembleFloat (s,e,m))
+    match classify_float x with
+    (* special values *)
+    | FP_zero
+    | FP_infinite
+    | FP_nan -> x
+    (* underflow gap *)
+    | _ when x > 0.0 && x < 1.5e-45 -> 0.0
+    | _ when x < 0.0 && x > -1.5e-45 -> -0.0
+    (* overflow *)
+    | _ when x > 3.4e38  -> infinity
+    | _ when x < -3.4e38 -> neg_infinity
+    | _ -> (* normal *)
+      let s,e,m = splitFloat x in
+      (* round mantissa to 23 binary digits *)
+      let m = round s m 29 in
+      (* m from 52 to 23 bits > take highest 23 bits *)
+      let m = mask m 29 51 in
+      Int64.float_of_bits (reassembleFloat (s,e,m))
 
   let doubleToFloatDomain x =
     match Base.to_float x with
@@ -194,6 +246,7 @@ struct
 
   let bitstringOfFloat f = bitstringOfInt64 (Int64.bits_of_float f)
 
+  let of_int x = match x with Some x -> Base.of_float (Int64.to_float x) | None -> raise Unknown
 end
 
 

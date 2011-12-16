@@ -1,79 +1,61 @@
-Group: Synthetic Modules
+Group: ints
 
-move.c
+01-expressions.c
 generate!
-synthetic/move.c
---kernel
+ints/ints-01-expressions.c
 
-inlined.c
+02-branch.c
 generate!
-synthetic/move-inl.c
+ints/ints-02-branch.c
 
-
-tail.c
+03-loops.c
 generate!
-synthetic/tail.c
---kernel
+ints/ints-03-loops.c
 
-splice.c
+04-functions.c
 generate!
-synthetic/splice.c
---kernel
+ints/ints-04-functions.c
 
-backptr.c
+05-recursion.c
 generate!
-synthetic/backptr.c
---kernel --nonstatic --unique usb_drv
+ints/ints-05-recursion.c
+
+10-posneg.c
+generate!
+ints/ints-10-posneg.c
+
+27-interval.c
+generate!
+ints/ints-27-interval.c
 
 
-Group: Kernel Modules
+Group: floats
 
-apm-emulation.c
-http://lxr.linux.no/#linux+v3.1/drivers/char/apm-emulation.c
-kernel/drivers/char/apm-emulation.c
---kernel --otherfun apm_queue_event
+01-expressions.c
+generate!
+floats/01-expressions.c
 
-ipmi_devintf.c
-http://lxr.linux.no/#linux+v3.1/drivers/char/ipmi/ipmi_devintf.c
-kernel/drivers/char/ipmi/ipmi_devintf.c
---kernel
+02-branch.c
+generate!
+floats/02-branch.c
 
-virtio_console.c
-http://lxr.linux.no/#linux+v3.1/drivers/char/virtio_console.c
-kernel/drivers/char/virtio_console.c
---kernel --otherfun show_port_name
+03-loops.c
+generate!
+floats/03-loops.c
 
-vt_ioctl.c
-http://lxr.linux.no/#linux+v3.1/drivers/char/vt_ioctl.c
-kernel/drivers/tty/vt/vt_ioctl.c
---kernel --nonstatic
+04-functions.c
+generate!
+floats/04-functions.c
 
-garmin_gps.c
-http://lxr.linux.no/#linux+v3.1/drivers/usb/serial/garmin_gps.c
-kernel/drivers/usb/serial/garmin_gps.c
---kernel --unique garmin_data
+05-recursion.c
+generate!
+floats/05-recursion.c
 
-whiteheat.c
-http://lxr.linux.no/#linux+v3.1/drivers/usb/serial/whiteheat.c
-kernel/drivers/usb/serial/whiteheat.c
---kernel --unique whiteheat_private
+10-posneg.c
+generate!
+floats/10-posneg.c
 
-hcd.c
-http://lxr.linux.no/#linux+v3.1/drivers/usb/core/hcd.c
-kernel/drivers/usb/core/hcd.c
---kernel --nonstatic --otherfun usb_host_authorized_default_show --otherfun usb_host_authorized_default_store
+27-interval.c
+generate!
+floats/27-interval.c
 
-message.c
-http://lxr.linux.no/#linux+v3.1/drivers/usb/core/message.c
-kernel/drivers/usb/core/message.c
---kernel --nonstatic
-
-ieee1394-raw
-http://lxr.linux.no/#linux+v2.6.35.4/drivers/ieee1394/raw1394.c
-kernel/drivers/ieee1394/raw1394.c
---kernel
-
-infiniband-ucma
-http://lxr.linux.no/#linux+v3.1/drivers/infiniband/core/ucma.c
-kernel/drivers/infiniband/core/ucma.c
---kernel --unique ucma_file

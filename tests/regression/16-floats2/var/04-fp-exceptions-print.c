@@ -15,6 +15,18 @@ int main(){
   // printf("isfinite(3.5e38f): %i\n", isfinite(3.5e38f)); // 0
   printf("3.4e38f==3.4e38: %i\n", 3.4e38f==3.4e38); // 0
   // warning: floating constant exceeds range of ‘float’
+  
+  float f1, f2;
+  f1 = 1.0f;
+  f2 = 2.0f;
+  printf("hex 3.4e38: %x\n", *(unsigned int*)&f1);
+  printf("hex 3.5e38: %x\n", *(unsigned int*)&f2);
+// 3.4e38f (max): 0 11111110 11111111100100110011110
+// 3.5e38f (inf): 0 11111111 00000000000000000000000
+// -1.0f        : 1 01111111 00000000000000000000000
+// 1.0f         : 0 01111111 00000000000000000000000
+// 2.0f         : 0 10000000 00000000000000000000000
+
 
   // double
   printf("1.7e308: %e\n", 1.7e308); // 1.7e308
