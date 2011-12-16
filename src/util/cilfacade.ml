@@ -126,7 +126,8 @@ let find_module_init funs fileAST =
       List.partition f funs
 
 (*brutal osek hack*)
-  let is_task f =  (String.length f >= 12 && String.sub f 0 12 = GU.taskprefix)
+  let is_task f =  (String.length f >= String.length(!GU.taskprefix) && String.sub f 0 (String.length(!GU.taskprefix)) = !GU.taskprefix) || 
+		   (String.length f >= String.length(!GU.isrprefix)  && String.sub f 0 (String.length(!GU.isrprefix)) = !GU.isrprefix)
 
 type startfuns = fundec list * fundec list * fundec list
 

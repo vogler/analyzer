@@ -66,6 +66,8 @@ let main () =
   let analyze = ref (analyzer (JB.string !(JB.field !GU.conf "analysis"))) in
   let oil file = (*GU.allfuns := true;*) GU.oil := true; GU.conf_osek (); Osek.Spec.oilFile := file in
   let tramp file = Osek.Spec.resourceheaders := file; add_include_file file in
+  let osekisrprefix prefix = GU.isrprefix := prefix in
+  let osektaskprefix prefix = GU.taskprefix := prefix in
   let setanalysis str = 
     begin match str with
             | "containment" -> GU.conf_containment ()
@@ -166,6 +168,8 @@ let main () =
                  ("--cilout", Arg.String setcil, "<path>  Where to dump cil output");
 		 ("--oil", Arg.String oil, "<file>  Oil file for the analysed program");
 		 ("--tramp", Arg.String tramp, "<file>  Resource-ID-headers for the analysed program");
+		 ("--osekisrprefix", Arg.String osekisrprefix, "Prefix added by the ISR macro");
+		 ("--osektaskprefix", Arg.String osektaskprefix, "Prefix added by the TASK macro");
                  ("--intrpts", Arg.Set GU.intrpts, " Enable constraints for interrupts.");
                  ("--timeout", Arg.Set_float max_time, " Maximal time for analysis. (0 -- no timeout)");
                  ("--solver-progress", Arg.Bool ((:=) GU.solver_progress), " <bool> Used for debugging. Prints out a symbol on solving a rhs.");
@@ -179,7 +183,7 @@ let main () =
     then GU.jsonFiles := fname :: !GU.jsonFiles 
     else fileNames := fname :: !fileNames
   in
-  Stats.reset Stats.HardwareIfAvail;  
+  Stats.reset Stats.SoftwareTimer;  
   CF.init();
   Arg.parse speclist recordFile usage_str;
   if !GU.allfuns || !GU.nonstatic || !GU.oil then GU.multi_threaded := true;
