@@ -594,7 +594,7 @@ struct
   let logor  = lift2 Floats.logor
   let logxor  = lift2 Floats.logxor
 (*  let lognot = eq (of_int 0.0) *)
-  let lognot = lift1 Floats.lognot (* ME *)
+  let lognot = eq (of_float 0.0) (* ME *)
 end
 
 
@@ -951,7 +951,7 @@ struct
 (*    | `Bot*)
     ]
   
-  let name () = "Exclusive & Inclusive Integer Intervals"
+  let name () = "Exclusive & Inclusive Float Intervals"
   
   let equal (x:t) (y:t) =
     match x, y with

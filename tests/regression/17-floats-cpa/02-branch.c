@@ -1,3 +1,4 @@
+// PARAM: --result pretty
 #include<stdio.h>
 #include<assert.h>
 

@@ -21,7 +21,7 @@ sig
     * don't return anything.*)
   val of_bool: bool -> t
   (** Transform a known boolean value to the default internal representation. It
-    * should follow C: [of_bool true = of_int 1] and [of_bool false = of_int 0]. *)
+    * should follow C: [of_bool true = of_float 1.0] and [of_bool false = of_float 0.0]. *)
   val is_bool: t -> bool
   (** Checks if the element is a definite boolean value. If this function
     * returns [true], the above [to_bool] should return a real value. *)

@@ -276,17 +276,17 @@ struct
       (* The main function! *)
       match a1,a2 with (* TODO wenn nicht int*int dann Top+Warning für Ausgabe bei mod *)
         (* For the integer values, we apply the domain operator *)
-        | `Int v1, `Int v2 -> (*print_endline "base:evalbinop:int*int";*) `Int (int_op v1 v2)
+        | `Int v1, `Int v2 -> let r = int_op v1 v2 in ignore(printf "Int %s %s Int %s = %s\n" (ID.short 1 v1) float_op_s (ID.short 1 v2) (ID.short 1 r)); `Int r
 	(* Floats *)
-        | `Float v1, `Float v2 -> M.warn_each ("binop"); ignore(printf "base:evalbinop:float*float:%s %s %s\n" (FD.short 1 v1) float_op_s (FD.short 1 v2)); `Float (float_op v1 v2)
-        | `Int v1, `Float v2 -> ignore(printf "Int %s Float %s\n" (ID.short 1 v1) (FD.short 1 v2));
+        | `Float v1, `Float v2 -> let r = float_op v1 v2 in ignore(printf "Float %s %s Float %s = %s\n" (FD.short 1 v1) float_op_s (FD.short 1 v2) (FD.short 1 r)); `Float r
+        | `Int v1, `Float v2 -> let r =
 		(match ID.to_int v1 with
-		| Some v1 -> `Float (float_op (FD.of_float (Int64.to_float v1)) v2)
-		| None -> `Float (FD.top ()))
-        | `Float v1, `Int v2 -> ignore(printf "Float %s Int %s\n" (FD.short 1 v1) (ID.short 1 v2));
+		| Some v1 -> float_op (FD.of_float (Int64.to_float v1)) v2
+		| None -> FD.top ()) in ignore(printf "Int %s %s Float %s = %s\n" (ID.short 1 v1) float_op_s (FD.short 1 v2) (FD.short 1 r)); `Float r
+        | `Float v1, `Int v2 -> let r = 
 		(match ID.to_int v2 with
-		| Some v2 -> `Float (float_op v1 (FD.of_float (Int64.to_float v2)))
-		| None -> `Float (FD.top ()))
+		| Some v2 -> float_op v1 (FD.of_float (Int64.to_float v2))
+		| None -> FD.top ()) in ignore(printf "Float %s %s Int %s = %s\n" (FD.short 1 v1) float_op_s (ID.short 1 v2) (FD.short 1 r)); `Float r
         (* For address +/- value, we try to do some elementary ptr arithmetic *)
         | `Address p, `Int n  -> begin
             try match op with
@@ -633,29 +633,47 @@ struct
           end
         | Cil.Ne, x, value, _ -> helper Cil.Eq x value (not tv)
         | Cil.Lt, x, value, _ -> begin
-           let range_from x = if tv then ID.ending (Int64.sub x 1L) else ID.starting x in
-           let limit_from = if tv then ID.maximal else ID.minimal in
+           let i_range_from x = if tv then ID.ending (Int64.sub x 1L) else ID.starting x in
+           let i_limit_from = if tv then ID.maximal else ID.minimal in
+           let f_range_from x = if tv then FD.ending (x -. 1.0) else FD.starting x in
+           let f_limit_from = if tv then FD.maximal else FD.minimal in
            match value with
              | `Int n -> begin 
-                 match limit_from n with
+                 match i_limit_from n with
                    | Some n ->
                         if M.tracing then M.tracec "invariant" "Yes, success! %a is not %Ld\n\n" Cil.d_lval x n;
-                        Some (x, `Int (range_from n))
+                        Some (x, `Int (i_range_from n))
                    | None -> None
-             end
+	       end
+             | `Float n -> begin 
+                 match f_limit_from n with
+                   | Some n ->
+                        if M.tracing then M.tracec "invariant" "Yes, success! %a is not %g\n\n" Cil.d_lval x n;
+                        Some (x, `Float (f_range_from n))
+                   | None -> None
+	       end
              | _ -> None
            end
         | Cil.Le, x, value, _ -> begin
-           let range_from x = if tv then ID.ending x else ID.starting (Int64.add x 1L) in
-           let limit_from = if tv then ID.maximal else ID.minimal in
+           let i_range_from x = if tv then ID.ending x else ID.starting (Int64.add x 1L) in
+           let i_limit_from = if tv then ID.maximal else ID.minimal in
+           let f_range_from x = if tv then FD.ending x else FD.starting (x +. 1.0) in
+           let f_limit_from = if tv then FD.maximal else FD.minimal in
            match value with
              | `Int n -> begin 
-                 match limit_from n with
+                 match i_limit_from n with
                    | Some n ->
                         if M.tracing then M.tracec "invariant" "Yes, success! %a is not %Ld\n\n" Cil.d_lval x n;
-                        Some (x, `Int (range_from n))
+                        Some (x, `Int (i_range_from n))
                    | None -> None
-             end
+	       end
+             | `Float n -> begin 
+                 match f_limit_from n with
+                   | Some n ->
+                        if M.tracing then M.tracec "invariant" "Yes, success! %a is not %g\n\n" Cil.d_lval x n;
+                        Some (x, `Float (f_range_from n))
+                   | None -> None
+	       end
              | _ -> None
            end
         | Cil.Gt, x, value, _ -> helper Cil.Le x value (not tv)
@@ -668,7 +686,8 @@ struct
         let null_val typ =
           match typ with
             | Cil.TPtr _ -> `Address (AD.null_ptr())
-            | _      -> `Int (ID.of_int 0L) 
+            | Cil.TFloat _ -> `Float (FD.of_float 0.0)
+	    | _ -> `Int (ID.of_int 0L)
         in
         let rec derived_invariant exp tv = 
         match exp with 
