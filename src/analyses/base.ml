@@ -242,27 +242,27 @@ struct
         | LAnd -> ID.logand
         | LOr -> ID.logor
         | _ -> (fun x y -> ID.top ())
-    in let float_op =
+    in let float_op_s, float_op =
       match op with 
-        | PlusA  -> (*print_endline "base:evalbinop:op=plus";*) FD.add
-        | MinusA -> (*print_endline "base:evalbinop:op=minus";*) FD.sub
-        | Mult   -> (*print_endline "base:evalbinop:op=mult";*) FD.mul
-        | Div    -> (*print_endline "base:evalbinop:op=div";*) FD.div
-        | Mod    -> (*print_endline "base:evalbinop:op=mod";*) FD.rem
-        | Lt -> (*print_endline "base:evalbinop:op=lt";*) FD.lt
-        | Gt -> (*print_endline "base:evalbinop:op=gt";*) FD.gt
-        | Le -> (*print_endline "base:evalbinop:op=le";*) FD.le
-        | Ge -> (*print_endline "base:evalbinop:op=ge";*) FD.ge
-        | Eq -> (*print_endline "base:evalbinop:op=eq";*) FD.eq
-        | Ne -> (*print_endline "base:evalbinop:op=ne";*) FD.ne
-        | BAnd -> FD.bitand
-        | BOr -> FD.bitor
-        | BXor -> FD.bitxor
-        | Shiftlt -> FD.shift_left
-        | Shiftrt -> FD.shift_right
-        | LAnd -> FD.logand
-        | LOr -> FD.logor
-        | _ -> (*print_endline "base:evalbinop:top";*) (fun x y -> FD.top ())
+        | PlusA  -> "+", FD.add
+        | MinusA -> "-", FD.sub
+        | Mult   -> "*", FD.mul
+        | Div    -> "/", FD.div
+        | Mod    -> "%", FD.rem
+        | Lt -> "<", FD.lt
+        | Gt -> ">", FD.gt
+        | Le -> "<=", FD.le
+        | Ge -> ">=", FD.ge
+        | Eq -> "==", FD.eq
+        | Ne -> "!=", FD.ne
+        | BAnd -> "&", FD.bitand
+        | BOr -> "|", FD.bitor
+        | BXor -> "^", FD.bitxor
+        | Shiftlt -> "<<", FD.shift_left
+        | Shiftrt -> ">>", FD.shift_right
+        | LAnd -> "&&", FD.logand
+        | LOr -> "||", FD.logor
+        | _ -> "??", (fun x y -> FD.top ())
     (* An auxiliary function for ptr arithmetic on array values. *)
     in let addToAddr n (addr:Addr.t) =
       match Addr.to_var_offset addr with
@@ -278,12 +278,12 @@ struct
         (* For the integer values, we apply the domain operator *)
         | `Int v1, `Int v2 -> (*print_endline "base:evalbinop:int*int";*) `Int (int_op v1 v2)
 	(* Floats *)
-        | `Float v1, `Float v2 -> ignore(printf "base:evalbinop:float*float:%s %s\n" (FD.short 1 v1) (FD.short 1 v2)); `Float (float_op v1 v2)
-        | `Int v1, `Float v2 -> ignore(printf "Int %s Float %s" (ID.short 1 v1) (FD.short 1 v2));
+        | `Float v1, `Float v2 -> M.warn_each ("binop"); ignore(printf "base:evalbinop:float*float:%s %s %s\n" (FD.short 1 v1) float_op_s (FD.short 1 v2)); `Float (float_op v1 v2)
+        | `Int v1, `Float v2 -> ignore(printf "Int %s Float %s\n" (ID.short 1 v1) (FD.short 1 v2));
 		(match ID.to_int v1 with
 		| Some v1 -> `Float (float_op (FD.of_float (Int64.to_float v1)) v2)
 		| None -> `Float (FD.top ()))
-        | `Float v1, `Int v2 -> ignore(printf "Float %s Int %s" (FD.short 1 v1) (ID.short 1 v2));
+        | `Float v1, `Int v2 -> ignore(printf "Float %s Int %s\n" (FD.short 1 v1) (ID.short 1 v2));
 		(match ID.to_int v2 with
 		| Some v2 -> `Float (float_op v1 (FD.of_float (Int64.to_float v2)))
 		| None -> `Float (FD.top ()))
@@ -422,7 +422,7 @@ struct
 	      | FFloat -> FDC.doubleToFloat num
 	  in
 	  let fkind = Pretty.sprint 1 (Cil.d_fkind () typ) in
-	  let _ = printf "CONST of type %s with orignial value %f (0b%s) and new value %f (0b%s)\n" fkind num (FDC.bitstringOfFloat num) value (FDC.bitstringOfFloat value) in
+	  let _ = printf "CONST of type %s with orignial value %g (0b%s) and new value %g (0b%s)\n" fkind num (FDC.bitstringOfFloat num) value (FDC.bitstringOfFloat value) in
 	  `Float (FD.of_float value)
       (* String literals *)
       | Cil.Const (Cil.CStr _)

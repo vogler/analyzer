@@ -32,7 +32,7 @@ int main() {
   assert(i == 18);
 
   i = 47 / j;
-  assert(i == 7);
+  assert(i == 7.8333333333333333333333333333333333333333333); // fails in C
   
 // skip b/c modulo isn't defined on floats -> compile error
 //  i = 8 % j;
@@ -71,8 +71,12 @@ int main() {
   assert(!j);
 
   k =  ! i;
-  k += ! j << 1;
-  assert(k == 2);
+  //k += ! j << 1;
+  k = !j;
+  // k = k << 1; // error: invalid operands to binary << (have ‘float’ and ‘int’)
+
+  //assert(k == 2);
+  assert(k);
 
   k =  (i && j);
   k += (j && i) << 1;

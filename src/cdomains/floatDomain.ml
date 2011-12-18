@@ -1,7 +1,7 @@
 open Pretty
 module GU = Goblintutil
-(* module JB = Json_type.Browse *)
 module JB = Json
+module M = Messages
 
 module type S =
 sig
@@ -36,6 +36,7 @@ sig
   val eq: t -> t -> t
   val ne: t -> t -> t
 
+  (* not defined for floats *)
   val bitnot: t -> t
   val bitand: t -> t -> t
   val bitor : t -> t -> t
@@ -112,7 +113,7 @@ struct
   let bitand = bit' Int64.logand
   let bitor  = bit' Int64.logor
   let bitxor = bit' Int64.logxor
-  let shift_left  n1 n2 = Int64.float_of_bits (Int64.shift_left (Int64.bits_of_float n1) (int_of_float n2))
+  let shift_left  n1 n2 = print_endline "SHIFT!!!"; Int64.float_of_bits (Int64.shift_left (Int64.bits_of_float n1) (int_of_float n2))
   let shift_right n1 n2 = Int64.float_of_bits (Int64.shift_right (Int64.bits_of_float n1) (int_of_float n2))
   let lognot n1    = of_bool (not (to_bool' n1))
   let logand n1 n2 = of_bool ((to_bool' n1) && (to_bool' n2))
@@ -763,9 +764,10 @@ struct
   let join (x1,x2) (y1,y2) = (I.min x1 y1, I.max x2 y2)
   let meet (x1,x2) (y1,y2) = (I.max x1 y1, I.min x2 y2)
   
-  let widen (l0,u0) (l1,u1) = 
-    (if I.lt l1 l0 then I.NInf else l0),
-    (if I.lt u0 u1 then I.PInf else u0)
+  let widen (l0,u0 as i1) (l1,u1 as i2) =
+    let res = (if I.lt l1 l0 then I.NInf else l0), (if I.lt u0 u1 then I.PInf else u0) in
+      if M.tracing then M.tracel "widen" "Widening %a and %a yields %a\n" pretty i1 pretty i2 pretty res;
+      res
 
   let narrow (l0,u0) (l1,u1) =
     let lr = match l0 with
