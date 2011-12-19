@@ -214,6 +214,13 @@ struct
 	    | "FE_TOWARDZERO"	-> round_towardZero f s
 	    | _ 		-> round_toNearest f xa
 
+  let subnormal x e m = match x < (2.0**(-127.0)) && x > (-2.0**(-127.0)) with
+    | false -> e,m
+    | true -> let rec shift e m = match bit m 51 with
+	  | true -> (Int64.add e (-1L)), (Int64.shift_left m 1)
+	  | false -> shift (Int64.add e (-1L)) (Int64.shift_left m 1)
+	in shift e m
+
   let doubleToFloat x =
     match classify_float x with
     (* special values *)
@@ -230,6 +237,7 @@ struct
       let s,e,m = splitFloat x in
       (* round mantissa to 23 binary digits *)
       let m = round s m 29 in
+      let e,m = subnormal x m e in
       (* m from 52 to 23 bits > take highest 23 bits *)
       let m = mask m 29 51 in
       Int64.float_of_bits (reassembleFloat (s,e,m))
