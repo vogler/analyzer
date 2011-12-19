@@ -241,9 +241,9 @@ struct
 
   let bitstringOfInt64 i =
     let rec strip_bits i s =
-      match i = 0L with
-      | true  -> s
-      | false -> strip_bits (Int64.shift_right_logical i 1) ((Int64.to_string (Int64.logand i 1L)) ^ s) in
+      match String.length s < 64 with
+      | false  -> s
+      | true -> strip_bits (Int64.shift_right_logical i 1) ((Int64.to_string (Int64.logand i 1L)) ^ s) in
     strip_bits i ""
 
   let bitstringOfFloat f = bitstringOfInt64 (Int64.bits_of_float f)
