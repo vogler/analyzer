@@ -95,7 +95,7 @@ struct
         | `LvalSet _ -> 3
         | `ExprSet _ -> 4
         | `ExpTriples _ -> 5
-        | `Float _ -> 6 (* ME *)
+        | `Float _ -> 1 (* ME *)
         | `Top -> 100
     in match x,y with
       | `Int x, `Int y -> ID.compare x y
@@ -180,7 +180,7 @@ struct
       | (`ExprSet x, `ExprSet y) -> `ExprSet (ES.join x y)
       | (`ExpTriples x, `ExpTriples y) -> `ExpTriples (PS.join x y)
       | _ -> `Top
-    with IntDomain.Unknown -> `Top
+    with IntDomain.Unknown | FloatDomain.Unknown -> `Top
 
   let meet x y = 
     try match (x,y) with 
@@ -195,7 +195,7 @@ struct
       | (`ExprSet x, `ExprSet y) -> `ExprSet (ES.meet x y)
       | (`ExpTriples x, `ExpTriples y) -> `ExpTriples (PS.meet x y)
       | _ -> `Bot
-    with IntDomain.Error -> `Bot
+    with IntDomain.Error | FloatDomain.Error -> `Bot
 
   let widen x y =
     try match (x,y) with 
@@ -210,7 +210,7 @@ struct
       | (`ExprSet x, `ExprSet y) -> `ExprSet (ES.widen x y)
       | (`ExpTriples x, `ExpTriples y) -> `ExpTriples (PS.widen x y)
       | _ -> `Top    
-    with IntDomain.Unknown -> `Top
+    with IntDomain.Unknown | FloatDomain.Unknown -> `Top
   
   let narrow x y =
     match (x,y) with 

@@ -282,7 +282,14 @@ struct
         | `Int v1, `Float v2 -> let r =
 		(match ID.to_int v1 with
 		| Some v1 -> float_op (FD.of_float (Int64.to_float v1)) v2
-		| None -> FD.top ()) in ignore(printf "Int %s %s Float %s = %s\n" (ID.short 1 v1) float_op_s (FD.short 1 v2) (FD.short 1 r)); `Float r
+		| None -> 
+		    (if ID.is_excl_list v1 then
+		      (let v1 = match ID.to_excl_list v1 with
+			| Some l -> FD.of_excl_list (List.map Int64.to_float l)
+			| None -> FD.top ()
+		      in float_op v1 v2)
+		    else FD.top ())
+		) in ignore(printf "Int %s %s Float %s = %s\n" (ID.short 1 v1) float_op_s (FD.short 1 v2) (FD.short 1 r)); `Float r
         | `Float v1, `Int v2 -> let r = 
 		(match ID.to_int v2 with
 		| Some v2 -> float_op v1 (FD.of_float (Int64.to_float v2))
@@ -460,6 +467,7 @@ struct
                   `Address (AD.null_ptr ())
              | Cil.TInt _, `Address a when AD.equal a (AD.null_ptr()) -> 
                   `Int (ID.of_int Int64.zero)
+             | Cil.TInt _, `Float a -> let r = (match FD.to_float a with Some f -> `Int (ID.of_int (Int64.of_float f)) | None -> `Float a) in ignore(printf "CAST Float %s to Int %s\n" (FD.short 1 a) (VD.short 1 r)); r
 	     | Cil.TFloat (fkind, attr), s ->
 		  let from_exp = sprint 1 (d_exp () exp) in
 		  let from_type = sprint 1 (d_type () (Cil.typeOf exp)) in
@@ -696,6 +704,7 @@ struct
           | Cil.BinOp(op, rval, Cil.Lval x, typ) -> helper op x (eval_rv a gs st rval) tv
           | Cil.BinOp(op, Cil.CastE (xt,x), Cil.CastE (yt,y), typ) when xt = yt 
             -> derived_invariant (Cil.BinOp (op, x, y, typ)) tv
+	  | Cil.BinOp(op, Cil.CastE (Cil.TInt _, Cil.Lval x), rval, typ) -> helper op x (eval_rv a gs st rval) tv
           (* Cases like if (x) are treated like if (x != 0) *)
           | Cil.Lval x -> 
             (* There are two correct ways of doing it: "if ((int)x != 0)" or "if (x != (typeof(x))0))"
