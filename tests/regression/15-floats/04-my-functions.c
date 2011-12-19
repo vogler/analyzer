@@ -1,4 +1,4 @@
-// PARAM: --result pretty
+// PARAM: --result pretty --propset float_domain interval
 #include<assert.h>
 #include<stdlib.h>
 

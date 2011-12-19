@@ -129,6 +129,10 @@ struct
   let set a ?(effect=true) (gs:glob_fun) (st,fl: store) (lval: AD.t) (value: value): store =
     let firstvar = if M.tracing then try (List.hd (AD.to_var_may lval)).vname with _ -> "" else "" in
     if M.tracing then M.tracel "set" ~var:firstvar "lval: %a\nvalue: %a\nstate: %a\n" AD.pretty lval VD.pretty value CPA.pretty st;
+    let _ = match value with
+      | `Float a -> print_endline "SET float"
+      | _ -> print_endline "SET other"
+    in
     (* Updating a single varinfo*offset pair. NB! This function's type does
      * not include the flag. *)
     let update_one_addr (x, offs) nst: cpa = 
@@ -474,7 +478,7 @@ struct
 		  let to_fkind = Pretty.sprint 1 (Cil.d_fkind () fkind) in
 		  let _ = printf "CAST of exp %s from type %s to %s\n" from_exp from_type to_fkind in
 		  begin match s, fkind with
-		    | `Int a, _		-> `Float (FDC.of_int (ID.to_int a))
+		    | `Int a, _		-> `Float (FDC.of_int (ID.to_int a)) (* full precision, ignoring type *)
 		    | `Float a, FFloat	-> `Float (FDC.doubleToFloatDomain a)
 		    | _, _ -> s
 		  end

@@ -7,4 +7,7 @@ int main()
     assert(i != f); // if int and float are both 32 bit
     assert(16777217.0 != f); // double!=float
     assert(16777217.0f == f); // float==float
+    
+    float g = i; // int -> float
+    assert(g == f);
 }

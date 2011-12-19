@@ -148,6 +148,7 @@ let main () =
                  ("--die-on-collapse", Arg.Set GU.die_on_collapse, " Raise an exception as soon as an array collapses.");
                  ("--keepcpp", Arg.Set keep_cpp, " Keep the intermediate output of running the C preprocessor.");
                  ("--cppflags", Arg.Set_string cppflags, "<flags>  Pre-processing parameters.");
+		 ("--ffloat-store", Arg.Set GU.ffloat_store, "Disable extended precision for flops (gcc flag).");
                  ("--kernel", Arg.Set GU.kernel, "For analyzing Linux Device Drivers.");
                  ("--showtemps", Arg.Set CF.showtemps, " Shows CIL's temporary variables when printing the state.");
                  ("--uncalled", Arg.Set GU.print_uncalled, " Display uncalled functions.");

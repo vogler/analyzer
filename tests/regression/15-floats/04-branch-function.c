@@ -1,10 +1,10 @@
-// PARAM: --result pretty
+// PARAM: --result pretty --propset float_domain interval
 #include<assert.h>
 #include<stdlib.h>
 
 #define NUM 5.5
 
-int getNumber(){
+float getNumber(){
 	return NUM;
 }
 

@@ -97,10 +97,11 @@ struct
   let add a b = (*let _ = printf "float:add: %f + %f = %f\n" a b (a+.b) in*) (+.) a b
   let sub  = (-.)
   let mul  = ( *. )
-  let div x y = (* nan instead? *)
+  let div  = (/.)
+(*  let div x y = (* nan instead? *)
     match y with 
       | 0.0 -> raise Division_by_zero  (* -- this is for a bug (#253) where div throws *) 
-      | _  -> x /. y			(*    sigfpe and ocaml has somehow forgotten how to deal with it*)
+      | _  -> x /. y			(*    sigfpe and ocaml has somehow forgotten how to deal with it*)*)
   let rem  = mod_float
   let lt n1 n2 = of_bool (n1 <  n2)
   let gt n1 n2 = of_bool (n1 >  n2)
