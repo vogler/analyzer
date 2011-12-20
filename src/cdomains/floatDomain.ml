@@ -233,12 +233,12 @@ struct
     (* overflow *)
     | _ when x > 3.4e38  -> infinity
     | _ when x < -3.4e38 -> neg_infinity
-    | _ -> (* normal *)
+    | _ -> (* normal or subnormal *)
       let s,e,m = splitFloat x in
-      (* handle subnormal numbers *)
-      let e,m = subnormal x m e in
       (* round mantissa to 23 binary digits *)
       let m = round s m 29 in
+      (* handle subnormal numbers *)
+      let e,m = subnormal x e m in
       (* m from 52 to 23 bits > take highest 23 bits *)
       let m = mask m 29 51 in
       Int64.float_of_bits (reassembleFloat (s,e,m))
