@@ -239,7 +239,6 @@ struct
       let e,m = subnormal x m e in
       (* round mantissa to 23 binary digits *)
       let m = round s m 29 in
-      let e,m = subnormal x m e in
       (* m from 52 to 23 bits > take highest 23 bits *)
       let m = mask m 29 51 in
       Int64.float_of_bits (reassembleFloat (s,e,m))
