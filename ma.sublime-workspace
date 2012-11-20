@@ -19,7 +19,7 @@
 			"file": "tests/file.c",
 			"settings":
 			{
-				"buffer_size": 106,
+				"buffer_size": 669,
 				"line_ending": "Unix"
 			}
 		}
@@ -48,6 +48,7 @@
 	},
 	"file_history":
 	[
+		"/home/ralf/analyzer/ma.sublime-project",
 		"/home/ralf/.config/sublime-text-2/Packages/Default/Default (Linux).sublime-keymap",
 		"/home/ralf/.config/sublime-text-2/Packages/User/Default (Linux).sublime-keymap",
 		"/home/ralf/.config/sublime-text-2/Packages/User/Preferences.sublime-settings",
@@ -74,6 +75,9 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"fp3",
+			"fp2",
+			"fp",
 			"space",
 			"complet",
 			"text",
@@ -109,20 +113,21 @@
 					"file": "tests/file.c",
 					"settings":
 					{
-						"buffer_size": 106,
+						"buffer_size": 669,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								106,
-								106
+								291,
+								291
 							]
 						],
 						"settings":
 						{
-							"syntax": "Packages/C++/C.tmLanguage"
+							"syntax": "Packages/C++/C.tmLanguage",
+							"translate_tabs_to_spaces": false
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
