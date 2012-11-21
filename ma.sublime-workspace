@@ -4,6 +4,10 @@
 		"selected_items":
 		[
 			[
+				"newhtml",
+				"newhtml"
+			],
+			[
 				"st",
 				"string"
 			],
@@ -20,6 +24,46 @@
 			"settings":
 			{
 				"buffer_size": 669,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/analyses/fileUse.ml",
+			"settings":
+			{
+				"buffer_size": 3479,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/cdomains/fileDomain.ml",
+			"settings":
+			{
+				"buffer_size": 455,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/util/goblintutil.ml",
+			"settings":
+			{
+				"buffer_size": 24407,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/framework/analyses.ml",
+			"settings":
+			{
+				"buffer_size": 21510,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "src/maingoblint.ml",
+			"settings":
+			{
+				"buffer_size": 17834,
 				"line_ending": "Unix"
 			}
 		}
@@ -48,6 +92,10 @@
 	},
 	"file_history":
 	[
+		"/home/ralf/analyzer/src/util/htmldump.ml",
+		"/home/ralf/analyzer/result/file.c_data/analysis0.html",
+		"/home/ralf/analyzer/src/analyses/mCP.ml",
+		"/home/ralf/analyzer/src/goblint.ml",
 		"/home/ralf/analyzer/ma.sublime-project",
 		"/home/ralf/.config/sublime-text-2/Packages/Default/Default (Linux).sublime-keymap",
 		"/home/ralf/.config/sublime-text-2/Packages/User/Default (Linux).sublime-keymap",
@@ -75,6 +123,16 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"html",
+			"new",
+			"style",
+			"html",
+			"newhtml",
+			"escape",
+			"featurelist",
+			"with",
+			"escape",
+			"Escape",
 			"fp3",
 			"fp2",
 			"fp",
@@ -105,7 +163,7 @@
 	"groups":
 	[
 		{
-			"selected": 0,
+			"selected": 1,
 			"sheets":
 			[
 				{
@@ -120,8 +178,8 @@
 						"selection":
 						[
 							[
-								291,
-								291
+								63,
+								63
 							]
 						],
 						"settings":
@@ -131,6 +189,144 @@
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "src/analyses/fileUse.ml",
+					"settings":
+					{
+						"buffer_size": 3479,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2227,
+								2227
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/OCaml/OCaml.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "src/cdomains/fileDomain.ml",
+					"settings":
+					{
+						"buffer_size": 455,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								455,
+								455
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/OCaml/OCaml.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "src/util/goblintutil.ml",
+					"settings":
+					{
+						"buffer_size": 24407,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								11936,
+								11936
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/OCaml/OCaml.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 5297.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "src/framework/analyses.ml",
+					"settings":
+					{
+						"buffer_size": 21510,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								888,
+								888
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/OCaml/OCaml.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 51.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 5,
+					"file": "src/maingoblint.ml",
+					"settings":
+					{
+						"buffer_size": 17834,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								9252,
+								9252
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/OCaml/OCaml.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 2203.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -183,6 +379,22 @@
 		"height": 0.0,
 		"selected_items":
 		[
+			[
+				"html",
+				"src/util/htmldump.ml"
+			],
+			[
+				"filedom",
+				"src/cdomains/fileDomain.ml"
+			],
+			[
+				"anal",
+				"src/framework/analyses.ml"
+			],
+			[
+				"mcp",
+				"src/analyses/mCP.ml"
+			],
 			[
 				"",
 				"hello.opa"
